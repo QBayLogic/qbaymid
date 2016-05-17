@@ -1,0 +1,205 @@
+---
+title: Blog-post
+---
+  <div class="w-section section tint">
+    <div class="w-container">
+      <div class="w-row recent-news-row">
+        <div class="w-col w-col-8 overall-content-column-left">
+          <div class="blog-post">
+            <div class="blog-post-header-image-block"></div>
+            <h1 class="blog-post-title">CλaSH FPGA starter</h1>
+            <div class="blog-post-date">May 13, 2016</div>
+            <div class="w-richtext">
+              <p>In this tutorial we'll be programming the Terasic&nbsp;<a href="http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&amp;CategoryNo=165&amp;No=593&amp;PartNo=1">DE0-Nano</a>&nbsp;FPGA development board using the functional hardware description language&nbsp;<a href="http://www.clash-lang.org/">CλaSH</a>. The end result of this tutorial is demonstrated in the video below:</p>
+              <figure class="w-richtext-align-fullwidth" style="padding-bottom: 56.2061%; width: 100%; max-width: 100%;" data-rt-max-width="" data-rt-max-height="56.206088992974244%" data-page-url="https://youtu.be/XUj9cewMsww" data-rt-type="video" data-rt-dimensions="854:480" data-rt-align="fullwidth">
+                <div>
+                  <iframe src="https://www.youtube.com/embed/XUj9cewMsww" frameborder="0" scrolling="no" allowfullscreen=""></iframe>
+                </div>&nbsp;</figure>
+              <p>This tutorial is not a general introduction to CλaSH, nor to programming FPGAs. It is meant to demonstrate how to use ofTopEntity&nbsp;annotations (added in version&nbsp;0.5.5&nbsp;of CλaSH) to configure your CλaSH designs for an FPGA, without writing a single line of VHDL or (System)Verilog. Even then, this tutorial is already almost too long for single blog post, but here goes:</p>
+              <blockquote>This tutorial used to be specified in terms of&nbsp;<em>.topentity</em>&nbsp;files, a method which is now superseded by&nbsp;TopEntity&nbsp;annotions. You can still see the old version on&nbsp;<a href="https://github.com/christiaanb/christiaanb.github.io/blob/900228402321c8344853441aba96c71ed1db830b/_posts/2015-05-01-clash-fpga-starter.md">github</a>
+              </blockquote>
+              <h3>Blinker circuit</h3>
+              <p>We start with some general information about the&nbsp;<a href="http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&amp;CategoryNo=165&amp;No=593&amp;PartNo=1">DE0-Nano</a>&nbsp;board:</p>
+              <ul>
+                <li>It has a 50 MHz crystal connected to a clock pin of FPGA, which we will connect to one of the&nbsp;<a href="https://www.altera.com/literature/ug/ug_altpll.pdf">PLL</a>s that is on the FPGA to create a&nbsp;<em>stable</em>&nbsp;50 MHz clock signal.</li>
+                <li>It has 8 green LEDs that turn&nbsp;<em>on</em>&nbsp;when we put a&nbsp;1&nbsp;on the FPGA pin connected to the LED.</li>
+                <li>It has two buttons which are already properly&nbsp;<a href="http://en.wikipedia.org/wiki/Switch#Contact_bounce">debounced</a>&nbsp;by a Schmitt trigger. The buttons are&nbsp;0&nbsp;when they are pressed, and&nbsp;1&nbsp;when they are not.</li>
+              </ul>
+              <p>The circuit that we are making will repeatedly do one of two things:</p>
+              <ul>
+                <li>Invert the state of the LEDs</li>
+                <li>Rotate the state of the LEDs</li>
+              </ul>
+              <p>We switch between these two modes when the&nbsp;KEY1&nbsp;button on the board is pressed&nbsp;<em>and subsequently released</em>. We reset the circuit by pressing the&nbsp;KEY0 button.</p>
+              <h3>CλaSH circuit specification</h3>
+              <p>The&nbsp;Blinker.hs&nbsp;file given below implements the behaviour of circuit (<em>sans</em>reset behaviour) we just described. As the clock is running at&nbsp;50 MHz, we shouldn’t update the state of the LEDs every clock cycle, as they will just seem to to all be turned on all the time to the human eye. We hence use a counter that counts up to a certain amount of clock cycles, and only update the state of the LEDs when the desired number of cycles is reached and the count is reset.</p>
+              <h3>TopEntity&nbsp;annotations</h3>
+              <p>Now that we’ve created our CλaSH design, it’s time to move on to the important part of this tutorial, elaboration of the&nbsp;TopEntity&nbsp;annotation. The&nbsp;<a href="https://hackage.haskell.org/package/clash-prelude/docs/CLaSH-Annotations-TopEntity.html#t:TopEntity">TopEntity</a>&nbsp;is a Haskell data type that guides the CλaSH compiler in generating port names and setting up clocks. These annotations are applied using the&nbsp;ANN&nbsp;pragma:</p>
+              <blockquote><em>{-# ANN foo (TopEntity {t_name = .., .., ..}) #-}</em>
+              </blockquote>
+              <p>In our example, we extend the minimalist&nbsp;<a href="https://hackage.haskell.org/package/clash-prelude/docs/CLaSH-Annotations-TopEntity.html#v:defTop">defTop</a>&nbsp;annotation with:</p>
+              <ul>
+                <li>t_name: the name our component should have. In our case:&nbsp;blinker</li>
+                <li>t_inputs: a list of names our inputs should have. In our case:&nbsp;KEY1</li>
+                <li>t_outputs: a list of names our outputs should have. In our case:&nbsp;LED</li>
+                <li>t_extraIn: a list of extra inputs that do not correspond to the arguments of our&nbsp;topEntity&nbsp;function. These extra inputs are always bit vectors. Every item in the&nbsp;extra_in&nbsp;list is a tuple (encoded as a 2-element list) of a name, and the number of bits for that input. In our case we add an extra 1-bit input&nbsp;CLOCK_50&nbsp;which will correspond to the pin to which the 50MHz crystal is attached, and a 1-bit input&nbsp;KEY0&nbsp;which is the button we will use as a reset.</li>
+                <li>t_clocks: a list of clock sources.</li>
+              </ul>
+              <p>We create a single clock source by instantiating the&nbsp;<em>default</em>&nbsp;template for the Altera PPL component&nbsp;<a href="https://hackage.haskell.org/package/clash-prelude/docs/CLaSH-Annotations-TopEntity.html#v:altpll">altpll</a>&nbsp;for the Cyclone IV. The first argument of this function is the name, the second an expression corresponding to the clock pin to connect, and the third the expression corresponding to the reset pin to connect. So to elaborate the arguments in order:</p>
+              <ul>
+                <li>name: the name of the component generating our clock. In our case"altpll50", an instantiated PLL component we will create later on in this tutorial.</li>
+                <li>clock port: Now, I lied a bit that we didn’t have to write any VHDL or SystemVerilog. As you can see, we connect the clock port to the expressionCLOCK_50(0), which is a VHDL expression. The&nbsp;altpll50s&nbsp;clock portexpects a single bit, but our&nbsp;CLOCK_50&nbsp;port is a 1-bit&nbsp;<em>vector</em>. Hence we need to select the first (and only) bit:&nbsp;"CLOCK_50(0)".</li>
+                <li>reset port: Again, we have to write some VHDL:&nbsp;not KEY0(0). Remember that our extra inputs are bit&nbsp;<em>vectors</em>, but the&nbsp;reset portexpects a single bit. Hence we need to select the first (and only) bit:KEY0(0). Additionally, remember that the keys are&nbsp;0&nbsp;when they are pressed, but the reset port expects an&nbsp;<em>active-high</em>&nbsp;signal. Hence we need to negate the signal:&nbsp;"not KEY0(0)".</li>
+              </ul>
+              <h3>VHDL generation</h3>
+              <p>Now it’s time to generate some VHDL, yay! Make sure that the&nbsp;Blinker.hs&nbsp;file is in your current working directory, and then run the CλaSH compiler to generate VHDL:</p>
+              <blockquote>clash --vhdl Blinker.hs
+              </blockquote>
+              <p>This will create a&nbsp;./vhdl/Blinker/&nbsp;directory, of which, for this tutorial, the most interesting file is within that directory is:</p>
+              <h3>Port/Pin mappings</h3>
+              <p>It’s almost time to start programming our FPGA. But first we need to setup how the component ports are connected to the right pins on the FPGA. For this we will use the&nbsp;DE0_Nano_SystemBuilder&nbsp;which you can find on the&nbsp;<a href="http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&amp;CategoryNo=165&amp;No=593&amp;PartNo=4">DE0-Nano CD-ROM</a>. This will create both a pin/port map file, and a&nbsp;<a href="http://dl.altera.com/?edition=web">Quartus II</a>&nbsp;project file. Note that I work on OS X, so both&nbsp;DE0_Nano_SystemBuilder&nbsp;and&nbsp;Quartus II&nbsp;are running inside a&nbsp;<a href="https://www.virtualbox.org/">VirtualBox</a>&nbsp;VM running Windows 8.</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="">
+                <div><img src="images/DE0-NanoSystemBuilder.jpg">
+                </div>
+              </figure>
+              <p>In&nbsp;DE0_Nano_SystemBuilder, call the project&nbsp;blinker, and ensure that&nbsp;<em>only</em>CLOCK,&nbsp;Button x 2, and&nbsp;LED x 8&nbsp;are selected. Then press the&nbsp;Generatebutton, this will open a&nbsp;save&nbsp;dialog window: select a location where you want to create the project and hit the&nbsp;save&nbsp;button. You can now closeDE0_Nano_SystemBuilder.</p>
+              <p>In the directory to which you saved the project you will find the files:</p>
+              <ul>
+                <li>blinker.htm</li>
+                <li>blinker.qpf</li>
+                <li>blinker.qsf</li>
+                <li>blinker.sdc</li>
+                <li>blinker.v</li>
+              </ul>
+              <p>You can delete&nbsp;blinker.v&nbsp;as we will be using our&nbsp;blinker.vhdl. The port/pin mappings that are generated by&nbsp;DE0_Nano_SystemBuilder&nbsp;do not completely correspond to our port names. We will hence need to update the mapping fileblinker.qsf:</p>
+              <ul>
+                <li>Replace every occurrence of&nbsp;CLOCK_50&nbsp;by&nbsp;CLOCK_50[0]</li>
+                <li>Replace every occurrence of&nbsp;KEY[0]&nbsp;by&nbsp;KEY0[0]</li>
+                <li>Replace every occurrence of&nbsp;KEY[1]&nbsp;by&nbsp;KEY1[0]</li>
+              </ul>
+              <p>The final&nbsp;blinker.qsf&nbsp;file will look like:</p>
+              <p>Also, since we will be using the&nbsp;PLL&nbsp;for clocks, you can replace the entire contents of&nbsp;blinker.sdc&nbsp;by:</p>
+              <blockquote>derive_pll_clocks</blockquote>
+              <h3>Quartus II</h3>
+              <p>We now open the&nbsp;blinker.qpf&nbsp;file in&nbsp;Quartus II. For this tutorial, I will be using version&nbsp;14.1&nbsp;of the&nbsp;Quartus II&nbsp;software. The first thing we will do is add the VHDL files generated by CλaSH to our design. In the menu bar, go to,Project -&gt; Add/Remove Files in Project..., press the&nbsp;...&nbsp;button next toFile name, in the load dialog, select all the files generated by clash, and pressOpen. Then press&nbsp;OK&nbsp;to close the&nbsp;Settings&nbsp;dialog.</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="">
+                <div><img src="images/quartus2-blinker-files.jpg">
+                </div>
+              </figure>
+              <p>Next we will create a&nbsp;PLL&nbsp;component. On the right of the&nbsp;Quartus II&nbsp;main window you will see the&nbsp;IP Catalog. Go to&nbsp;Installed IP &gt; Library &gt; Basic Functions &gt; Clocks; PLLs and Resets &gt; PLL, and double click on&nbsp;ALTPLL.</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="">
+                <div><img src="images/quartus2-ipcatalog-altpll.jpg">
+                </div>
+              </figure>
+              <p>This opens a dialog called&nbsp;Save IP Variation, at the end of the line enteraltpll50&nbsp;and press&nbsp;OK.</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="">
+                <div><img src="images/quartus2-ipvariation-altpll50.jpg">
+                </div>
+              </figure>
+              <p>This opens the&nbsp;MegaWizard&nbsp;dialog for the PLL. Change&nbsp;What is the frequency of the inclk0 input?&nbsp;to&nbsp;50.000</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="100%">
+                <div><img src="images/megawizzard-altpll50.jpg">
+                </div>
+              </figure>
+              <p>Then press&nbsp;Finish&nbsp;<em>twice</em>. This closes the&nbsp;MegaWizard&nbsp;dialog, and opens a new dialog asking if you want to add this IP block to your project. We want this, so select ‘Yes’.</p>
+              <h3>Synthesis time</h3>
+              <p>Finally, we’re finished with configuration, and we can start creating the configuration file for the FPGA. In the menu bar, click: 'Processing -&gt; Start Compilation’. In my extremely slow VM this compilation/synthesis process will take a while, if but might be much faster on your machine.</p>
+              <h3>Programming time</h3>
+              <p>After synthesis has finished, it is time to program our FPGA board. Connect the FPGA board to a USB port, and start the programmer from the menu bar:&nbsp;Tools -&gt; Programmer. Press the&nbsp;Start&nbsp;button on the left to program your FPGA and wait until the progress bar says&nbsp;100% (Successful).</p>
+              <figure class="w-richtext-align-fullwidth" style="max-width: 100%;" data-rt-type="image" data-rt-align="fullwidth" data-rt-max-width="">
+                <div><img src="images/quartus2-programmer-blinker.jpg">
+                </div>
+              </figure>
+              <h3>Time to play</h3>
+              <p>Your FPGA should now be fully configured with the CλaSH generated design for you to play with. So yeah, go press those buttons!</p>
+              <p>This ends the tutorial on the use of&nbsp;TopEntity&nbsp;annotations to program your FPGA devices with CλaSH designs. I hope you got the gist of it. If/When I get my hands on a Xilinx FPGA board, I hope to make an alternate version of this tutorial, but then use Xilinx’ ISE/Vivado tool-flow instead.</p>
+            </div>
+            <div class="w-embed w-script">
+              <script src="https://gist.github.com/christiaanb/73b00c42d33b9b701405ea33fce70af0.js"></script>
+            </div>
+            <div class="w-embed">
+              <!-- Go to www.addthis.com/dashboard to customize your tools -->
+              <div class="addthis_sharing_toolbox"></div>
+            </div>
+          </div>
+          <div class="w-clearfix blog-author-block"><img src="images/christiaan.jpg" class="blog-author-image">
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2">Christiaan Baaij</div>
+          </div>
+          <div class="w-embed w-script">
+            <div id="disqus_thread"></div>
+            <script>
+              /**
+              * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+              * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+              */
+              /*
+              var disqus_config = function () {
+              this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+              this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+              };
+              */
+              (function() { // DON'T EDIT BELOW THIS LINE
+              var d = document, s = d.createElement('script');
+              s.src = '//qbaylogic.disqus.com/embed.js';
+              s.setAttribute('data-timestamp', +new Date());
+              (d.head || d.body).appendChild(s);
+              })();
+            </script>
+            <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+            </noscript>
+          </div>
+        </div>
+        <div class="w-col w-col-4 overall-sidebar-col-right">
+          <div class="widget-block"><a href="fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="clash-support.html" class="link sidebar-list-link">CλaSH support</a>
+          </div>
+          <div class="widget-block">
+            <a href="about-clash.html" class="w-inline-block widget-image-block">
+              <div class="widget-image-block-overlay">
+                <div class="image-block-title">About CλaSH</div>
+                <div class="button">learn more</div>
+              </div>
+            </a>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <div class="w-clearfix content-info-block"><img src="images/location-pin.svg" class="contact-icon">
+                <div class="contact-block-title">Visit us</div>
+                <p class="contact-info-text">Zilverling 5096
+                  <br>Hallenweg 19
+                  <br>7522 NH Enschede (The Netherlands)</p>
+              </div>
+              <div class="w-clearfix content-info-block"><img src="images/telephone-handle-silhouette.svg" class="contact-icon">
+                <div class="contact-block-title">Call us</div>
+                <p class="contact-info-text">Call us on <a href="tel:+31611211687" class="link">+31 (0)6 11 211 687</a>
+                </p>
+              </div>
+              <div class="w-clearfix content-info-block last"><img src="images/email-filled-closed-envelope.svg" class="contact-icon">
+                <div class="contact-block-title">Mail us</div>
+                <p class="contact-info-text">Mail us on <a class="link" href="mailto:info@qbaylogic.com">info@qbaylogic.com</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <ul class="w-list-unstyled icon-list">
+                <li class="icon-list-item smaller"><img src="images/computer-microprocessor-2.svg" class="list-icon small">
+                  <div class="list-title">FPGA consultants</div>
+                  <p>We apply FPGA technology in domains with difficult mathematical problems, where solutions need low latencies and high performance.</p>
+                </li>
+                <li class="icon-list-item smaller"><img src="images/mathematic-operations-buttons.svg" class="list-icon small">
+                  <div class="list-title">Creators of CλaSH</div>
+                  <p>We have developed CλaSH, a functional hardware description language, providing unprecedented abstraction mechanisms for FPGA design.</p>
+                </li>
+                <li class="icon-list-item smaller last"><img src="images/teacher.svg" class="list-icon small">
+                  <div class="list-title">Experienced educators</div>
+                  <p>Our workshops and training are based on 30+ years of experience in teaching students at bachelor, master, and phd level.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
