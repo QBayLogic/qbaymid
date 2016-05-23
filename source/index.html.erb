@@ -187,35 +187,28 @@
       </div>
       <div class="blog-posts-column">
         <div class="w-row">
-          <div class="w-col w-col-6 blog-post-item">
-            <div class="recent-news-post">
-              <a href="blog-post.html" class="w-inline-block recent-news-image-block"></a><a href="blog-post.html" class="link recent-news-link-title">CλaSH FPGA starter</a>
-              <p>In this tutorial we'll be programming the Terasic DE0-Nano FPGA development board using the functional hardware description language CλaSH.</p>
-              <div class="recent-news-date">May 13, 2016</div>
+          <% page_articles[0..1].each do |article| %>
+            <div class="w-col w-col-6 blog-post-item">
+              <div class="recent-news-post">
+                <%= link_to '', article, :class => "w-inline-block recent-news-image-block", :style => "background-image: url('"+image_path(article.data.header_image)+"');" %><%= link_to article.title, article, :class => "link recent-news-link-title" %>
+                <%= article.summary(200) %>
+                <div class="recent-news-date"><%= article.date.strftime('%b %e, %G') %></div>
+              </div>
             </div>
-          </div>
-          <div class="w-col w-col-6 blog-post-item">
-            <div class="recent-news-post">
-              <a href="blog-post.html" class="w-inline-block recent-news-image-block"></a><a href="blog-post.html" class="link recent-news-link-title">CλaSH FPGA starter</a>
-              <p>In this tutorial we'll be programming the Terasic DE0-Nano FPGA development board using the functional hardware description language CλaSH.</p>
-              <div class="recent-news-date">May 13, 2016</div>
-            </div>
-          </div>
+          <% end %>
         </div>
       </div>
       <div class="blog-posts-column _2">
         <div class="widget-block">
           <ul class="w-list-unstyled">
-            <li class="blog-post-item">
-              <div class="recent-news-list-item"><a href="blog-post.html" class="link recent-news-link-title">CλaSH FPGA starter</a>
-                <div class="recent-news-date-title">May 13, 2016</div>
-              </div>
-            </li>
-            <li>
-              <div class="recent-news-list-item"><a href="blog-post.html" class="link recent-news-link-title">CλaSH FPGA starter</a>
-                <div class="recent-news-date-title">May 13, 2016</div>
-              </div>
-            </li>
+            <% page_articles[2..4].each do |article| %>
+              <li class="blog-post-item">
+                <div class="recent-news-list-item">
+                  <%= link_to article.title, article, :class => "link recent-news-link-title"  %>
+                  <div class="recent-news-date-title"><%= article.date.strftime('%b %e, %G') %></div>
+                </div>
+              </li>
+            <% end %>
           </ul>
           <div class="recent-news-list-item"><a href="blog-archive.html" class="link read-more-link">Blog Archive</a>
           </div>

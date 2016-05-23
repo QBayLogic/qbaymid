@@ -1142,12 +1142,12 @@ a:hover {
 .icon-list-item {
   position: relative;
   margin-bottom: 18px;
-  padding-right: 25px;
+  padding-right: 5px;
   padding-left: 93px;
 }
 
 .icon-list-item.smaller {
-  padding-left: 55px;
+  padding-left: 45px;
 }
 
 .icon-list-item.smaller.last {
@@ -1163,8 +1163,8 @@ a:hover {
 
 .list-icon.small {
   position: absolute;
-  top: 25px;
-  height: 40px;
+  top: 5px;
+  height: 30px;
 }
 
 .list-title {
@@ -1543,7 +1543,6 @@ a:hover {
   height: 280px;
   margin-bottom: 30px;
   border-radius: 5px;
-  background-image: url('../images/code3.jpg');
 }
 
 .service-dynamic-item {
@@ -1555,7 +1554,6 @@ a:hover {
   height: 175px;
   margin-bottom: 20px;
   border-radius: 4px;
-  background-image: url('../images/code3.jpg');
   background-position: 50% 50%;
   background-size: cover;
 }

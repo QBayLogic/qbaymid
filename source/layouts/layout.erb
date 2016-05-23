@@ -17,8 +17,8 @@
     });
   </script>
   <%= javascript_include_tag :modernizr %>
-  <link rel="shortcut icon" type="image/x-icon" href="images/logo_ico_small.png">
-  <link rel="apple-touch-icon" href="images/Logo.png">
+  <link rel="shortcut icon" type="image/x-icon" href="<%= image_path("logo_ico_small.png") %>">
+  <link rel="apple-touch-icon" href="<%= image_path("Logo.png") %>">
 </head>
 <body>
 <%= partial "partials/header" %>
@@ -26,5 +26,6 @@
 <%= partial "partials/footer" %>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
 <%= javascript_include_tag :webflow %>
+<%= google_analytics_universal_tag %>
 </body>
 </html>

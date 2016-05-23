@@ -17,3 +17,11 @@ gem 'middleman-aws'
 gem 'middleman-s3_sync', '>=4.0.0'
 gem 'middleman-cloudfront',
   github: 'andrusha/middleman-cloudfront', branch: 'master'
+
+gem 'mime-types'
+gem "middleman-blog"
+gem 'nokogiri'
+gem 'middleman-disqus'
+gem 'middleman-syntax'
+gem 'pygments.rb'
+gem 'middleman-google-analytics'

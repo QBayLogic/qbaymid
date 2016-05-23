@@ -2,17 +2,17 @@
     <div class="top-header">
       <div class="w-container container">
         <div class="top-nav-content-block social">
-          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="images/facebook_white.svg" class="top-social-icon">
+          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><%= image_tag "facebook_white.svg", :class => "top-social-icon"%>
           </a>
-          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="images/twitter_white.svg" class="top-social-icon">
+          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><%= image_tag "twitter_white.svg", :class => "top-social-icon"%>
           </a>
-          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="images/linkedin-logo_white.svg" class="top-social-icon">
+          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><%= image_tag "linkedin-logo_white.svg", :class => "top-social-icon"%>
           </a>
         </div>
         <div class="top-nav-content-block">
-          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><img src="images/gb.png" class="top-nav-icon">
+          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><%= image_tag "gb.png", :class => "top-nav-icon"%>
           </a>
-          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><img src="images/nl.png" class="top-nav-icon">
+          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><%= image_tag "nl.png", :class => "top-nav-icon"%>
           </a>
         </div>
         <div class="w-hidden-small w-hidden-tiny top-nav-content-block left">
@@ -22,14 +22,14 @@
     </div>
     <div class="contact-header">
       <div class="w-container container">
-        <a href="index.html" class="w-nav-brand logo-container"><img src="images/Logo-109_new-ok.png" class="logo">
+        <a href="index.html" class="w-nav-brand logo-container"><%= image_tag 'Logo-109_new-ok.png', :class => 'logo' %>
         </a>
-        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="images/phone-auricular-outline_grey.svg" class="header-contact-icon">
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><%= image_tag "phone-auricular-outline_grey.svg", :class => "header-contact-icon" %>
           <div class="header-contact-title">Call us on:</div>
           <div class="header-contact-title _2"><a wf-temp-elem="" class="link header-contact-link" href="tel:+31611211687">+31 (0)6 11 211 687</a>
           </div>
         </div>
-        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="images/email-envelope-outline_grey.svg" class="header-contact-icon">
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><%= image_tag "email-envelope-outline_grey.svg", :class => "header-contact-icon" %>
           <div class="w-hidden-small w-hidden-tiny header-contact-title">Questions?</div>
           <div class="header-contact-title _2"><a class="link header-contact-link" href="mailto:info@qbaylogic.com">Send us an e-mail</a>
           </div>
@@ -38,13 +38,13 @@
     </div>
     <div data-collapse="small" data-animation="default" data-duration="400" data-contain="1" class="w-nav navbar">
       <div class="w-container nav-container">
-        <nav role="navigation" class="w-nav-menu nav-menu"><a href="index.html" class="w-nav-link nav-link">Home</a>
+        <nav role="navigation" class="w-nav-menu nav-menu"><%= link_to 'Home', "index.html", :class => "w-nav-link nav-link"%>
           <div data-delay="400" class="w-dropdown dropdown-link">
             <div class="w-dropdown-toggle nav-link dropdown">
               <div>Our services</div>
               <div class="w-icon-dropdown-toggle dropdown-icon"></div>
             </div>
-            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="fpga-design.html" class="w-dropdown-link dropdown-link-item">FPGA design</a><a href="workshops-training.html" class="w-dropdown-link dropdown-link-item">Workshops &amp; Training</a><a href="clash-support.html" class="w-dropdown-link dropdown-link-item">CλaSH support</a>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><%= link_to 'FPGA design', "fpga-design.html", :class => "w-dropdown-link dropdown-link-item"%><%= link_to 'Workshops &amp; Training', "workshops-training.html", :class => "w-dropdown-link dropdown-link-item"%><%= link_to 'CλaSH support', "clash-support.html", :class => "w-dropdown-link dropdown-link-item"%>
             </nav>
           </div>
           <div data-delay="200" class="w-dropdown dropdown-link">
@@ -52,9 +52,9 @@
               <div>About us</div>
               <div class="w-icon-dropdown-toggle dropdown-icon"></div>
             </div>
-            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="about-clash.html" class="w-dropdown-link dropdown-link-item">About CλaSH</a><a href="our-team.html" class="w-dropdown-link dropdown-link-item">Our team</a>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><%= link_to 'About CλaSH', "about-clash.html", :class => "w-dropdown-link dropdown-link-item"%><%= link_to 'Our team', "our-team.html", :class => "w-dropdown-link dropdown-link-item"%>
             </nav>
-          </div><a href="blog-archive.html" class="w-nav-link nav-link">Blog archive</a><a href="testimonials.html" class="w-nav-link nav-link">CLash&nbsp;Testimonials</a><a href="contact-us.html" class="w-nav-link nav-link">Contact us</a>
+          </div><%= link_to 'Blog archive', "blog.html", :class => "w-nav-link nav-link"%><%= link_to 'CLash&nbsp;Testimonials', "testimonials.html", :class => "w-nav-link nav-link"%><%= link_to 'Contact us', "contact-us.html", :class => "w-nav-link nav-link"%>
         </nav>
         <div class="w-nav-button menu-button">
           <div class="w-icon-nav-menu"></div>

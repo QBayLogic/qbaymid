@@ -84,6 +84,10 @@ GEM
       middleman-cloudfront
       middleman-s3_sync
       rake
+    middleman-blog (4.0.1)
+      addressable (~> 2.3)
+      middleman-core (>= 4.0.0)
+      tzinfo (>= 0.3.0)
     middleman-cli (4.1.8)
       thor (>= 0.17.0, < 2.0)
     middleman-core (4.1.8)
@@ -108,6 +112,13 @@ GEM
       servolux
       tilt (~> 1.4.1)
       uglifier (~> 3.0)
+    middleman-disqus (1.2.0)
+      middleman-core (~> 4.0)
+    middleman-google-analytics (2.1.1)
+      activesupport (~> 4.1)
+      erubis
+      middleman-core (>= 3.4)
+      uglifier (>= 2.5, < 4.0)
     middleman-livereload (3.4.6)
       em-websocket (~> 0.5.1)
       middleman-core (>= 3.3)
@@ -124,6 +135,12 @@ GEM
       parallel
       ruby-progressbar
       unf
+    middleman-syntax (2.1.0)
+      middleman-core (>= 3.2)
+      rouge (~> 1.0)
+    mime-types (3.0)
+      mime-types-data (~> 3.2015)
+    mime-types-data (3.2016.0221)
     mini_portile2 (2.0.0)
     minitest (5.8.4)
     multi_json (1.12.0)
@@ -136,6 +153,10 @@ GEM
     padrino-support (0.13.2)
       activesupport (>= 3.1)
     parallel (1.8.0)
+    posix-spawn (0.3.11)
+    pygments.rb (0.6.3)
+      posix-spawn (~> 0.3.6)
+      yajl-ruby (~> 1.2.0)
     rack (1.6.4)
     rack-livereload (0.3.16)
       rack
@@ -143,6 +164,7 @@ GEM
     rb-fsevent (0.9.7)
     rb-inotify (0.9.7)
       ffi (>= 0.5.0)
+    rouge (1.10.1)
     ruby-progressbar (1.8.1)
     sass (3.4.22)
     servolux (0.12.0)
@@ -156,6 +178,7 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.2)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby
@@ -163,10 +186,17 @@ PLATFORMS
 DEPENDENCIES
   middleman (>= 4.0.0)
   middleman-aws
+  middleman-blog
   middleman-cloudfront!
+  middleman-disqus
+  middleman-google-analytics
   middleman-livereload
   middleman-minify-html
   middleman-s3_sync (>= 4.0.0)
+  middleman-syntax
+  mime-types
+  nokogiri
+  pygments.rb
   tzinfo-data
   wdm (~> 0.1.0)
 

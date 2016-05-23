@@ -1,42 +1,27 @@
----
-title: Blog Archive
-pageable: true
-per_page: 3
----
-  <div class="w-section page-header dark">
-    <div class="w-container container page-header-container">
-      <h1 class="page-header-title">Blog archive</h1>
-      <h2 class="page-header-title subtitle">Posts on using CλaSH</h2>
-    </div>
-  </div>
+<% wrap_layout :layout do %>
+
   <div class="w-section section tint">
-    <div class="w-container container">
-      <div class="w-row recent-news-row">
-        <div class="w-col w-col-9 overall-content-column-left">
-          <% page_articles.each_with_index do |article, i| %>
-            <div class="blog-post">
-              <% link_to article do %>
-                <%= image_tag image_path(article.data.header_image), :class => "blog-post-header-image-block" %>
-              <% end %>
-              <%= link_to article.title, article, :class => "link blog-post-link" %>
-              <div class="blog-post-date"><%= article.date.strftime('%b %e, %G') %></div>
-
-              <%= article.summary(200) %>
-             <%= link_to 'Read more', article, :class => "link with-arrow" %>
+  <div class="w-container">
+    <div class="w-row recent-news-row">
+      <div class="w-col w-col-9 overall-content-column-left">
+        <div class="blog-post">
+          <div class="blog-post-header-image-block" style="background-image: url('<%= image_path(current_article.data.header_image) %>');"></div>
+          <h1 class="blog-post-title"><%= current_article.title %></h1>
+          <div class="blog-post-date"><%= current_article.date.strftime('%b %e, %G') %></div>
+          <div class="w-richtext">
+            <%= current_article.body %>
+          </div>
+          <div class="w-embed">
+              <div class="addthis_sharing_toolbox"></div>
             </div>
-          <% end %>
-
-          <% if paginate %>
-
-            <% if prev_page %>
-              <p class='pagination-link'><%= link_to '<< Previous page', prev_page %></p>
-            <% end %>
-
-            <% if next_page %>
-              <p class='pagination-link'><%= link_to 'Next page >>', next_page, :class => "link" %></p>
-            <% end %>
-
-          <% end %>
+          </div>
+          <div class="w-clearfix blog-author-block"><%= image_tag current_article.data.author_image, :class => "blog-author-image"%>
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2"><%= current_article.data.author %></div>
+          </div>
+          <div class="w-embed w-script">
+            <%= disqus %>
+          </div>
         </div>
         <div class="w-col w-col-3 overall-sidebar-col-right">
           <div class="widget-block"><a href="fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="clash-support.html" class="link sidebar-list-link">CλaSH support</a>
@@ -92,3 +77,6 @@ per_page: 3
       </div>
     </div>
   </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5735ce1812343b0e"></script>
+
+<% end %>
