@@ -1,11 +1,10 @@
----
-title: CλaSH support
----
+<% wrap_layout :layout do %>
+
   <div class="w-section page-header dark">
     <div class="w-container">
-      <h1 class="page-header-title">CλaSH support</h1>
+      <h1 class="page-header-title">FPGA design</h1>
     </div>
-    <h1 class="page-header-title subtitle">Expert on call</h1>
+    <h1 class="page-header-title subtitle">Custom design &amp; application acceleration</h1>
   </div>
   <div class="w-section section tint">
     <div class="w-container">
@@ -16,14 +15,9 @@ title: CλaSH support
             <div class="section-title-line"></div>
           </div>
           <div class="w-richtext rich-text-block">
-            <p>The&nbsp;<a href="about-clash.html">CλaSH compiler</a>&nbsp;is an open-source project with an active and helpful community, and community resources such as blog posts on how to use&nbsp;CλaSH. There might however be situations where you want a more direct form of support. Such situations might include:</p>
-            <ul>
-              <li>You want phone support for the CλaSH compiler.</li>
-              <li>You need an active developer to fix a certain bug in the CλaSH compiler. Or you need a developer to fix a bug that only shows up in code available under an NDA.</li>
-              <li>You require a new feature to be added to the&nbsp;CλaSH compiler, or require a custom version of the &nbsp;CλaSH compiler. The latter can occur when there is no community consensus about a particular (disruptive) change.</li>
-              <li>You quickly need to knows things like: ¨What is the best way to do this in&nbsp;CλaSH?¨, or ¨How do I generalize this &nbsp;CλaSH code?¨</li>
-            </ul>
-            <p>As the creators of CλaSH, QBayLogic can provide expert help in situations as described above, and many more.&nbsp;<a href="contact-us.html">Contact us</a>&nbsp;if you need our help using CλaSH.</p>
+
+          <%= yield %>
+
           </div>
           <div class="w-row service-blocks-row">
             <div class="w-col w-col-6 service-block-column">
@@ -77,3 +71,5 @@ title: CλaSH support
       </div>
     </div>
   </div>
+
+<% end %>
