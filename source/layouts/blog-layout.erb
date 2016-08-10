@@ -5,7 +5,7 @@
     <div class="w-row recent-news-row">
       <div class="w-col w-col-9 overall-content-column-left">
         <div class="blog-post">
-          <div class="blog-post-header-image-block" style="background-image: url('<%= image_path(current_article.data.header_image) %>');"></div>
+          <div class="blog-post-header-image-block" style="background: url('<%= image_path(current_article.data.header_image) %>'); background-size: 100% 280px "></div>
           <h1 class="blog-post-title"><%= current_article.title %></h1>
           <div class="blog-post-date"><%= current_article.date.strftime('%b %e, %G') %></div>
           <div class="w-richtext">
