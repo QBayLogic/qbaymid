@@ -69,11 +69,13 @@ set :markdown_engine, :kramdown
 ###
 
 # Methods defined in the helpers block are available in templates
-# helpers do
-#   def some_helper
-#     "Helping"
-#   end
-# end
+helpers do
+  def post_url(article_title)
+    blog.articles.find { |article| article.title.downcase == article_title.downcase }.url
+    rescue
+    ""
+  end
+end
 
 #------------------------------------------------------------------------
 # Configuration variables specific to each project
