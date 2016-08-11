@@ -34,18 +34,18 @@ f _ = natVal (Proxy :: Proxy n) +
 ~~~
 
 The problem is that, even though we have a `KnownNat n` (a _type_-level natural `n` which we can reflect to a _term_-level `Integer`), GHC cannot infer `KnownNat (n+2)`.
-You would think that, in 2016, given a natural number `n`, an advanced compiler such as GHC should surely be able to infer the value corresponding to the natural number `n + 2`: you simply add `2` to already given `n`.
-Sadly, GHC can not do this... and surely, complaints are made [1](https://www.reddit.com/r/haskell/comments/40j8zf/is_the_ghctypelits_api_unfinished/), [2](https://github.com/clash-lang/ghc-typelits-natnormalise/issues/8), [3](http://stackoverflow.com/questions/32839389/can-i-get-knownnat-n-to-imply-knownnat-n-3-etc)
+You would think that, in 2016, given a natural number `n`, an advanced compiler such as GHC should _surely_ be able to infer the value corresponding to the natural number `n + 2`: you simply add 2 to already given `n`.
+Sadly, GHC can not do this... and, _surely_, [complaints](https://www.reddit.com/r/haskell/comments/40j8zf/is_the_ghctypelits_api_unfinished/) [were](https://github.com/clash-lang/ghc-typelits-natnormalise/issues/8) [made](http://stackoverflow.com/questions/32839389/can-i-get-knownnat-n-to-imply-knownnat-n-3-etc).
 
 # A type-checker plugin for solving KnownNat constraints
 
 As I've blogged about in another [post](<%= post_url("GHC type checker plugins: adding new type-level operations") %>), GHC supports so-called [type-checker plugins](https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/compiler-plugins.html#typechecker-plugins) since version 7.10.1.
-Type checker plugins let us extend GHC's constraint solver, i.e. extend the range of programs GHC can type check.
+Type checker plugins let us extend GHC's constraint solver, i.e., extend the range of programs GHC can type check.
 
-So, given that GHC 7.10.1 was released on March 27 2015, surely somebody must have already written a type-checker plugin that can fix our annoying `KnownNat` issue.
-Well, even someone did, such a plugin has never been released on [hackage](http://hackage.haskell.org/), until today that is: [https://hackage.haskell.org/package/ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat)
+So, given that GHC 7.10.1 was released on March 27 2015, surely somebody must have already written a type-checker plugin that can fix our annoying `KnownNat` issue, right?
+Well, even if someone did, such a plugin has never been released on [hackage](http://hackage.haskell.org/), until today that is: [https://hackage.haskell.org/package/ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat)
 
-Using this plugin, by just adding the follwing line:
+By just adding the following line:
 
 ~~~haskell
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
@@ -68,7 +68,7 @@ f _ = natVal (Proxy :: Proxy n) +
       natVal (Proxy :: Proxy (n+2))
 ~~~
 
-we can finally see that "all is right with the world":
+we can finally see that "all is right with the world (of KnownNat)":
 
 ~~~text
 $ ghci -XDataKinds -XTypeApplications Test.hs
@@ -79,20 +79,21 @@ Ok, modules loaded: Test.
 6
 ~~~
 
-# Building the type-checker plugin
+# Creating this type-checker plugin
 
 Now, there are probably a multitude of reasons as to why a plugin for solving `KnownNat` constraints wasn't build/released before now; one of the likely reasons being that both the GHC API, and type-checker plugins, are somewhat obscure.
-Then again, I, the author of this post, _have_ written [several](http://hackage.haskell.org/package/ghc-typelits-natnormalise) [type-checker plugins](http://hackage.haskell.org/package/ghc-typelits-extra), and I _am_ (at least somewhat) familiar with those parts of the GHC API involved with constraint solving.
-So what are the reasons that _I_ didn't build it (much) earlier:
+Then again, I, the author of this post, _have_ written [several](http://hackage.haskell.org/package/ghc-typelits-natnormalise) [type-checker plugins](http://hackage.haskell.org/package/ghc-typelits-extra), and I _am_ (at least somewhat) familiar with those parts of the GHC API that are involved with constraint solving.
+So what are the reasons that _I_ didn't build such a plugin (much) earlier:
 
 1. To be honest, I was personally never too bothered with typing in the extra `KnownNat` constraints.
+   That is, until I [wanted to simplify](https://github.com/clash-lang/clash-prelude/commit/e5a6a0ac24ca6c2af59e7410965e69c7b5c42c06) the API of one of the libraries that I work on.
 2. I thought [it couldn't be done](https://github.com/clash-lang/ghc-typelits-natnormalise/issues/8#issuecomment-237529270).
 
-I will focus now on point 2, the reason I thought it couldn't be done.
+I will now focus on point 2, the reason I thought it couldn't be done.
 
 ### Evidence for KnownNat constraints
 
-What Type checker plugins do is provide _evidence_ for the constraints it wants to solve; where this _evidence_ is in the form of [EvTerm](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/TcEvidence.html#t:EvTerm):
+Basically, what Type checker plugins must do is provide _evidence_ for the constraints GHC wants them to solve; where this _evidence_ takes on the form of [EvTerm](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/TcEvidence.html#t:EvTerm):
 
 ~~~haskell
 data EvTerm
@@ -133,27 +134,35 @@ Where, for example, the evidence for a `KnownNat 8` constraint, would be encoded
 OK, so what's the problem with `EvTerm`?
 Well, let me first explain what we are trying to do:
 
-- Given evidence for i.e. `KnownNat n` and `KnownNat 2`
+- Given e.g. evidence for `KnownNat n` and `KnownNat 2`
 - We want to add the two values of the evidence to create evidence for `KnownNat (n+2)`.
 
 And this is where we run into problems: `EvTerm` does not have a constructor for adding two `KnownNat` evidence terms.
 Actually, the more general problem is that it doesn't allow us to create (arbitrary) [Core](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#t:Expr) expressions which will perform the addition.
 This problem is discussed in more detail at: [https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm](https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm).
 
-So, this made me think for quite some time that it was simply not possible to create a `KnownNat` solver given the current (version 8.0.1) GHC API.
+So, this made me think that it was simply not possible to create a `KnownNat` solver given the current (version 8.0.1) state of the GHC API.
 And then, yesterday (August 9th, 2016), just before bed, after staring for some time at the `EvTerm` definition, I realised I could use the `EvDFunApp` constructor to do what I want!
 
 ### Building a dictionary (function)
 
 As some of you might already know, class constraints in Haskell are translated to so-called dictionaries by GHC.
 A dictionary is record, where the fields correspond to the methods (and super-classes) of the class.
-i.e. the dictionary for the `Eq` class is:
+So, e.g. for the `Eq` class:
+
+~~~haskell
+class Eq a where
+  (==) :: a -> a -> Bool
+  (/=) :: a -> a -> Bool
+~~~
+
+GHC creates the following dictionary:
 
 ~~~haskell
 data DEq a
   = DEq
-  { (==) :: a -> a -> Bool
-  , (/=) :: a -> a -> Bool
+  { (==$) :: a -> a -> Bool
+  , (/=$) :: a -> a -> Bool
   }
 ~~~
 
@@ -170,21 +179,21 @@ GHC creates a dictionary function:
 
 ~~~haskell
 dfunEqTup d1 d2 =
-  DEq { (==) = \(a,b) (c,d) -> (&&) ((==) d1 a c)
-                                    ((==) d2 b d)
-      , (/=) = \(a,b) (c,d) -> (&&) ((/=) d1 a c)
-                                    ((/=) d2 b d)
+  DEq { (==$) = \(a,b) (c,d) -> (&&) ((==) d1 a c)
+                                     ((==) d2 b d)
+      , (/=$) = \(a,b) (c,d) -> (||) ((/=) d1 a c)
+                                     ((/=) d2 b d)
       }
 ~~~
 
 Now that we know what _dictionary functions_ are, we can come back to the `EvDFunApp` constructor of `EvTerm`.
 `EvDFunApp` applies dictionaries to a given _dictionary function_.
-That is, where _dictionary functions_ are our _Constraint-level_ lambda's, `EvDFunApp` is our _Constraint-level_ application.
-This means that all we need to do is figure out how to write an instance that gives us our _Contraint-level_ arithmetic operations, and we would be in business.
+That is, where _dictionary functions_ are our _evidence-level_ lambdas, `EvDFunApp` is our _evidence-level_ application.
+This means that all we need to do is figure out how to write an instance that gives us our _evidence-level_ arithmetic operations, and we would be in business.
 
-### Constraint-level addition
+### Evidence-level addition
 
-Below follows the code for our specially crafted class, and corresponding instance, so that we get a _Constraint-level_ addition operation:
+Below follows the code for our specially crafted class, and corresponding instance, so that we get an _evidence-level_ addition operation:
 
 ~~~haskell
 {-# LANGUAGE AllowAmbiguousTypes   #-}
@@ -208,29 +217,29 @@ instance (KnownNat a, KnownNat b) => KnownNatAdd a b where
   natSingAdd = SNatKn (natVal (Proxy @a) + natVal (Proxy @b))
 ~~~
 
-For this code, GHC will give us the desired _dictionary function_ to do _Constraint-level_ addition:
+For the above code, GHC will generate the desired _dictionary function_ to do _evidence-level_ addition:
 
 ~~~haskell
 dfunKnownNatAdd :: forall a b . DKnownNat a -> DKnownNat b
                 -> DKnownNatAdd a b
 dfunKnownNatAdd kn1 kn2 =
-  DKnownNatAdd { natSingAdd = SNat (natVal kn1 (Proxy @a) +
-                                    natVal kn2 (Proxy @b))
+  DKnownNatAdd { natSingAdd = SNatKn (natVal kn1 (Proxy @a) +
+                                      natVal kn2 (Proxy @b))
                }
 ~~~
 
-OK, so we can now build a `DKnownNatAdd` dictionary, but this only gives us _evidence_ for `KnownNatAdd` constraints, and not for `KnownNat` constraints.
-And this is where another lesser-known aspect of class constraint comes in:
+OK, so we can now build a `DKnownNatAdd` dictionary, however, this only gives us _evidence_ for a `KnownNatAdd` constraint, but not for a `KnownNat` constraint.
+And this is where another lesser-known aspect of GHCs translation of classes comes in:
 
 - Single method classes are represented by `newtype` dictionaries in GHC.
 
-And `newtype`s can be safely casted to (and from) their underlying representation using coercions.
-Looking at the code for our _Constraint-level_ addition, we can now see that:
+And, we can safe [cast](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#v:Cast) a `newtype` to (and from) its underlying representation using [coercions](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/Coercion.html#t:Coercion).
+Looking at the code for our _evidence-level_ addition, we can now see that:
 
 - `KnownNatAdd` is nothing more than a `newtype` wrapper around `SNatKn`
 - `SNatKn` is a newtype wrapper around `Integer`.
 
-And when we take a look at the definition of `KnownNat`:
+And, when we take a look at the (hidden) [definition](http://hackage.haskell.org/package/base-4.9.0.0/docs/src/GHC.TypeLits.html#KnownNat) of `KnownNat`:
 
 ~~~haskell
 newtype SNat (n :: Nat) = SNat Integer
@@ -240,7 +249,7 @@ class KnownNat (n :: Nat) where
 ~~~
 
 we see that `KnownNat` is, ultimately, also nothing more than a `newtype` wrapper around `Integer`.
-This means we can safely cast our `DKnownNatAdd` dictionary to the `DKnownNat` dictionary (the code for these coercions can be found [here](https://github.com/clash-lang/ghc-typelits-knownnat/blob/f3977e5583040683b4f17d5548c5d996653c27d8/src/GHC/TypeLits/KnownNat/Solver.hs#L283):
+This means we can safely cast our `DKnownNatAdd` dictionary to the `DKnownNat` dictionary (the code for these coercions can be found [here](https://github.com/clash-lang/ghc-typelits-knownnat/blob/f3977e5583040683b4f17d5548c5d996653c27d8/src/GHC/TypeLits/KnownNat/Solver.hs#L283)):
 
 1. KnownNatAdd a b ~ SNatKn (a + b)
 2. SNatKn (a + b) ~ Integer
@@ -249,13 +258,13 @@ This means we can safely cast our `DKnownNatAdd` dictionary to the `DKnownNat` d
 
 And that's it:
 
-1. We have our `DKnownNatAdd` dictionary function for _Constraint-level_ addition.
-2. A way to safely cast a `DKnownNatAdd` dictionary to a `DKnownNat` dictionary.
+1. We have our `DKnownNatAdd` dictionary function for _evidence-level_ addition.
+2. A way to safely cast a `DKnownNatAdd` dictionary to a `DKnownNat` dictionary, the evidence for `KnownNat` constraints.
 
 # Closing thoughts
 
 So now finally, on August 10th 2016, using the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) type checker plugin, GHC can finally solve "complex" `KnownNat` constraints from other simple, single variable, `KnownNat` constraints.
-So does that mean it infer all kinds of "complex" `KnownNat` constraints? Well... no, it can (currently) only infer constraints involving:
+So does that mean it can infer all kinds of "complex" `KnownNat` constraints? Well... no, it can (currently) only infer constraints involving:
 
 - Type-level natural numbers
 - Type variables
@@ -281,7 +290,7 @@ g _ = natVal (Proxy :: Proxy n) +
       natVal (Proxy :: Proxy (n-4))
 ~~~
 
-then we should not just automatically solve the `KnownNat (n-4)` constraint from the given just the `KnownNat n` constraint, because for `0 <= n < 4`, `n-4` is not a natural number.
+then we should not just automatically solve the `KnownNat (n-4)` constraint from the given `KnownNat n` constraint, because for `0 <= n < 4`, `n-4` is not a natural number.
 In this case, we should only automatically infer `KnownNat (n-4)` when an additional `4 <= n` constraint is given:
 
 ~~~haskell
@@ -291,6 +300,6 @@ g' _ = natVal (Proxy :: Proxy n) +
 ~~~
 
 I think I know how to check for these additional constraints, so a future version of the plugin will automatically solve `KnownNat` constraints involving subtractions.
-For user-defined type-level natural operations we are currently out of luck, because, unlike the standard operations in `GHC.TypeLits`, we cannot encode the corresponding _dictionary functions_ for those user-defined operations beforehand.
-Perhaps, once arbitrary Core expressions can be used as evidence (discussed [here](https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm)), we can reflect type-level operations to constraint-level operations, and then also automatically solve `KnownNat` constraints over user-defined type-level operations.
+For user-defined type-level natural operations we are currently out of luck: unlike for the standard operations in `GHC.TypeLits`, we cannot encode the corresponding _dictionary functions_ beforehand.
+Perhaps, once arbitrary Core expressions can be used as evidence (discussed [here](https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm)), we can reflect type-level operations to evidence-level operations, and then also automatically solve `KnownNat` constraints over user-defined type-level operations.
 
