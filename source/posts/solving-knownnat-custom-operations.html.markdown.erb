@@ -1,0 +1,205 @@
+---
+title: "Solving custom operations in KnownNat constraints"
+date: 2016-08-17 16:00 UTC
+tags: haskell type_checker_plugins
+header_image: Breaking-Chain_min.jpg
+author: Christiaan Baaij
+author_image: christiaan.jpg
+---
+
+In my previous [post](<%= post_url("Solving GHCs KnownNat constraints") %>) I discussed a solver plugin for `KnownNat` constraints, and with regards to user-defined type-level operations, I said:
+
+> i.e. it cannot solve constraints involving subtraction (`-`) or user-specified type-level operations on type-level naturals [...] For user-defined type-level natural operations we are currently out of luck: unlike for the standard operations in `GHC.TypeLits`, we cannot encode the corresponding _dictionary functions_ beforehand.
+
+well... it turns our we do not have to know these corresponding _dictionary functions_ beforehand.
+So, I'm hereby announcing [version 0.2 of the ghc-typelits-knownnat plugin](http://hackage.haskell.org/package/ghc-typelits-knownnat-0.2), which can now __also__ solve `KnownNat` constraints over types consisting of:
+
+* Subtractions (`GHC.TypeLits.-`)
+* User-defined type-level functions
+
+### Supporting user-defined operations
+
+So what is the "trick" for handling user-defined operations?
+Well, in my previous [post](<%= post_url("Solving GHCs KnownNat constraints") %>), we defined a class, and corresponding instance for _every_ type-level operation.
+For example, for addition (`GHC.TypeLits.+`), we defined:
+
+~~~haskell
+class KnownNatAdd (a :: Nat) (b :: Nat) where
+  natSingAdd :: SNatKn (a + b)
+
+instance (KnownNat a, KnownNat b) => KnownNatAdd a b where
+  natSingAdd = SNatKn (natVal (Proxy @ a) + natVal (Proxy @ b))
+~~~
+
+And for multiplication (`GHC.TypeLits.*`), we defined:
+
+~~~haskell
+class KnownNatMul (a :: Nat) (b :: Nat) where
+  natSingMul :: SNatKn (a * b)
+
+instance (KnownNat a, KnownNat b) => KnownNatMul a b where
+  natSingMul = SNatKn (natVal (Proxy @ a) * natVal (Proxy @ b))
+~~~
+
+However, what we would want, is a single type class for functions of a certain arity, and subsequently define multiple instances for this single class.
+We can then export these type-classes, and developers can add an instance for their own type-level operations, and the solver plugin can then just lookup these instances.
+
+Using some [singletons](http://hackage.haskell.org/package/singletons) trickery we can define such a type class as:
+
+~~~haskell
+-- | Class for arithmetic functions with /two/ arguments.
+--
+-- The 'Symbol' /f/ must correspond to the fully qualified name of the
+-- type-level operation.
+class KnownNat2 (f :: Symbol) (a :: Nat) (b :: Nat) where
+  type KnownNatF2 f :: Nat ~> Nat ~> Nat
+  natSing2 :: SNatKn (KnownNatF2 f @@ a @@ b)
+~~~
+
+As it says in the comments, the first argument of this class is a type-level _Symbol_ corresponding to the fully qualified name of the type-level operation.
+We need to do this, because, unlike normal type constructors (.i.e. `Maybe`), type families cannot be partially applied.
+This means we __cannot__ write a class and corresponding instance of the form:
+
+~~~haskell
+class KnownNat2 (f :: Nat -> Nat -> Nat) (a :: Nat) (b :: Nat) where
+  natSing2 :: SNatKn (f a b)
+
+-- this does not work: we cannot partially apply (+)
+instance (KnownNat a, KnownNat b) => KnownNat2 (+) a b where
+  natSing2 = SNatKn (natVal (Proxy @a) + natVal (Proxy @b))
+~~~
+
+So, instead, for the first argument of the `KnownNat2`, we use a `Symbol` that corresponds to the name of the type-level operation.
+The solver plugin can then use the name of type-level operation to find the corresponding `KnownNat2` instance.
+
+Now, again due to the restriction on the partial application of type families, the associated type family `KnownNatF2` __cannot__ be of kind:
+
+~~~haskell
+type family KnownNatF2 (f :: Symbol) :: Nat -> Nat -> Nat
+~~~
+
+Instead, we must use a _defunctionalised_ form of our type-level operations, which are provided by the [singletons](http://hackage.haskell.org/package/singletons) package:
+
+~~~haskell
+type family KnownNatF2 (f :: Symbol) :: Nat ~> Nat ~> Nat
+~~~
+
+Where the difference is that we use `~>` (tilde-right_angle) instead of `->` (dash-right_angle).
+
+We can now define our addition and multiplication instances as:
+
+~~~haskell
+instance (KnownNat a, KnownNat b) => KnownNat2 "GHC.TypeLits.+" a b where
+  type KnownNatF2 "GHC.TypeLits.+" = (:+$)
+  natSing2 = SNatKn (natVal (Proxy @a) + natVal (Proxy @b))
+
+instance (KnownNat a, KnownNat b) => KnownNat2 "GHC.TypeLits.*" a b where
+  type KnownNatF2 "GHC.TypeLits.*" = (:*$)
+  natSing2 = SNatKn (natVal (Proxy @a) * natVal (Proxy @b))
+~~~
+
+And subtraction as:
+
+~~~haskell
+instance (KnownNat a, KnownNat b, b <= a) =>
+  KnownNat2 "GHC.TypeLits.-" a b where
+    type KnownNatF2 "GHC.TypeLits.-" = (:-$)
+    natSing2 = SNatKn (natVal (Proxy @a) - natVal (Proxy @b))
+~~~
+
+which gets an extra constraint that `KnownNat (a - b)` only holds when `b <= a`.
+
+### Adding operations to the solver
+
+So now that we have a type-class for constraint-level arithmetic, what steps should a developer take so that her type-level functions are supported by the [ghc-typelits-knownnat](http://hackage.haskell.org/package/ghc-typelits-knownnat) solver?
+We will give a short example.
+
+1.
+
+  Enable some language extensions
+
+~~~haskell
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables,
+             TypeApplications, TypeFamilies, TypeInType, TypeOperators,
+             UndecidableInstances, TemplateHaskell #-}
+~~~
+
+2.
+
+  Import the required modules
+
+~~~haskell
+import Data.Proxy              (Proxy (..))
+import Data.Singletons         (Apply, type (~>))
+import GHC.TypeLits.KnownNat
+import GHC.TypeLits
+
+import Data.Type.Bool          (If) -- used just for this example
+~~~
+
+3.
+
+  Define the type-level operation
+
+~~~haskell
+-- | Get the maximum of two type-level 'Nat's
+type family Max (a :: Nat) (b :: Nat) :: Nat where
+  Max 0 b = b
+  Max a b = If (a <=? b) b a
+~~~
+
+  One restriction is that such a type-level operation must have at least __two__ equations.
+  This restriction is due GHC treating single-equation type families as type synonyms, which are expanded at the [Core](https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#t:Expr) level.
+
+  That is, had we written our `Max` operation as a single-equation operation:
+
+~~~haskell
+type family Max (a :: Nat) (b :: Nat) :: Nat where
+  Max a b = If (a <=? b) b a
+~~~
+
+  then a `KnownNat (Max x y)` constraint would show up as `KnownNat (If (x <=? y) y x)` inside the solver plugin.
+  And, consequently, the solver wouldn't be able to look up the `KnownNat2` instance of `Max`.
+
+4.
+
+  Define the _defunctionalised_ form of the type-level operation
+
+~~~haskell
+data MaxSym1 :: Nat -> Nat ~> Nat
+data MaxSym2 :: Nat ~> Nat ~> Nat
+
+type instance Apply MaxSym2 a     = (MaxSym1 a)
+type instance Apply (MaxSym1 a) b = Max a b
+~~~
+
+5.
+
+  And finally specify the `KnownNat2` instance:
+
+~~~haskell
+instance (KnownNat a, KnownNat b) =>
+  KnownNat2 $(nameToSymbol ''Max) a b where
+    type KnownNatF2 $(nameToSymbol ''Max) = MaxSym2
+    natSing2 = let x = natVal (Proxy @a)
+                   y = natVal (Proxy @b)
+                   z = max x y
+               in  SNatKn z
+~~~
+
+  where we use the `nameToSymbol` (exported by `GHC.TypeLits.KnownNat`) function to converts a Template Haskell `Name` to a `Symbol`.
+
+### Version 1.0?
+
+The [ghc-typelits-knownnat](http://hackage.haskell.org/package/ghc-typelits-knownnat) solver plugin is now at version 0.2; and it supports:
+
+* All the type-level arithmetic functions of [GHC.TypeLits](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html)
+* User-defined type-level operations
+
+Which might make you wonder: if it basically supports all type-level operations on `Nat`, why isn't this version 1.0?
+
+Well, I probably should have called it 1.0, and perhaps I will call it that in a next bugfix release.
+However, there are still some aspects that would be nice to add/fix:
+
+* Add a `KnownBool` and `KnownOrdering` class and add support for the [comparison](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#t:-60--61--63-) [operators](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#t:-60--61--63-) of [GHC.TypeLits](http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html).
+* Find a way to index the `KnownNat<N>` classes that is less error-prone than a `Symbol` corresponding to the fully qualified name of the type-level operation.
