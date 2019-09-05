@@ -2637,7 +2637,7 @@
 	    if (!$maps.length) return;
 
 	    if (google === null) {
-	      $.getScript('https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&callback=_wf_maps_loaded');
+	      $.getScript('https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&key=AIzaSyDH-A0El-RN-JUQdprBT-8SFhQyxy10dk0&callback=_wf_maps_loaded');
 	      window._wf_maps_loaded = mapsLoaded;
 	    } else {
 	      mapsLoaded();
@@ -2786,7 +2786,7 @@
 
 	    // Click marker to open in google maps
 	    google.maps.event.addListener(state.marker, 'click', function() {
-	      window.open('https://maps.google.com/?z=' + state.zoom + '&daddr=' + state.latLng);
+	      window.open('https://maps.google.com/?key=AIzaSyDH-A0El-RN-JUQdprBT-8SFhQyxy10dk0?z=' + state.zoom + '&daddr=' + state.latLng);
 	    });
 
 	    return state;
