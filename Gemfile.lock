@@ -156,7 +156,7 @@ GEM
     parallel (1.8.0)
     pygments.rb (1.2.1)
       multi_json (>= 1.0.0)
-    rack (1.6.11)
+    rack (1.6.12)
     rack-livereload (0.3.16)
       rack
     rake (11.1.2)
