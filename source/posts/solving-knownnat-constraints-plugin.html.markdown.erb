@@ -39,7 +39,7 @@ Sadly, GHC can not do this... and, _surely_, [complaints](https://www.reddit.com
 
 # A type-checker plugin for solving KnownNat constraints
 
-As I've blogged about in another [post](<%= post_url("GHC type checker plugins: adding new type-level operations") %>), GHC supports so-called [type-checker plugins](https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/compiler-plugins.html#typechecker-plugins) since version 7.10.1.
+As I've blogged about in another [post](https://qbaylogic.com/blog/2016/05/10/type-checker-plugin.html), GHC supports so-called [type-checker plugins](https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/compiler-plugins.html#typechecker-plugins) since version 7.10.1.
 Type checker plugins let us extend GHC's constraint solver, i.e., extend the range of programs GHC can type check.
 
 So, given that GHC 7.10.1 was released on March 27 2015, surely somebody must have already written a type-checker plugin that can fix our annoying `KnownNat` issue, right?

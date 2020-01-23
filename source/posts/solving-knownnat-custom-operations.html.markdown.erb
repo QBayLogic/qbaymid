@@ -7,7 +7,7 @@ author: Christiaan Baaij
 author_image: christiaan.jpg
 ---
 
-In my previous [post](<%= post_url("Solving GHCs KnownNat constraints") %>) I discussed a solver plugin for `KnownNat` constraints, and with regards to user-defined type-level operations, I said:
+In my previous [post](https://qbaylogic.com/blog/2016/08/10/solving-knownnat-constraints-plugin.html) I discussed a solver plugin for `KnownNat` constraints, and with regards to user-defined type-level operations, I said:
 
 > i.e. it cannot solve constraints involving subtraction (`-`) or user-specified type-level operations on type-level naturals [...] For user-defined type-level natural operations we are currently out of luck: unlike for the standard operations in `GHC.TypeLits`, we cannot encode the corresponding _dictionary functions_ beforehand.
 
@@ -20,7 +20,7 @@ So, I'm hereby announcing [version 0.2 of the ghc-typelits-knownnat plugin](http
 ### Supporting user-defined operations
 
 So what is the "trick" for handling user-defined operations?
-Well, in my previous [post](<%= post_url("Solving GHCs KnownNat constraints") %>), we defined a class, and corresponding instance for _every_ type-level operation.
+Well, in my previous [post](https://qbaylogic.com/blog/2016/08/10/solving-knownnat-constraints-plugin.html), we defined a class, and corresponding instance for _every_ type-level operation.
 For example, for addition (`GHC.TypeLits.+`), we defined:
 
 ~~~haskell
