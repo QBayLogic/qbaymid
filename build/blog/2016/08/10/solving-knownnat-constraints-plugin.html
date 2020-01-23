@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Solving GHCs KnownNat constraints</title>
+  <meta property="og:title" content="QBayLogic">
+  <meta property="og:description" content="QBayLogic is a spin-off company of the University of Twente, Enschede, The Netherlands. We apply FPGA technology in domains with difficult mathematical problems.">
+  <meta name="twitter:card" content="summary">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../../../../stylesheets/site-393324d2.css" rel="stylesheet" />
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js"></script>
+  <script>
+    WebFont.load({
+      google: {
+        families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic","Montserrat:400,700","Cardo:regular,italic,700","Reenie Beanie:regular"]
+      }
+    });
+  </script>
+  <script src="../../../../javascripts/modernizr-05933cc1.js"></script>
+  <link rel="shortcut icon" type="image/x-icon" href="../../../../images/logo_ico_small-ba7e953f.png">
+  <link rel="apple-touch-icon" href="../../../../images/Logo-389f0112.png">
+</head>
+<body>
+  <div class="w-section header-wrapper">
+    <div class="top-header">
+      <div class="w-container container">
+        <div class="top-nav-content-block social">
+          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/facebook_white-61c83ff3.svg" class="top-social-icon" alt="Facebook white" />
+          </a>
+          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/twitter_white-2b2bd36d.svg" class="top-social-icon" alt="Twitter white" />
+          </a>
+          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/linkedin-logo_white-c0d672b6.svg" class="top-social-icon" alt="Linkedin logo white" />
+          </a>
+        </div>
+        <div class="top-nav-content-block">
+          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><img src="../../../../images/gb-5afd0a44.png" class="top-nav-icon" alt="Gb" />
+          </a>
+          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><img src="../../../../images/nl-5f381ef4.png" class="top-nav-icon" alt="Nl" />
+          </a>
+        </div>
+        <div class="w-hidden-small w-hidden-tiny top-nav-content-block left">
+          <div class="header-contact-text">We are FPGA engineers located in Enschede, The Netherlands.</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-header">
+      <div class="w-container container">
+        <a href="index.html" class="w-nav-brand logo-container"><img src="../../../../images/Logo-109_new-ok-e0a01a25.png" class="logo" alt="Logo 109 new ok" />
+        </a>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/phone-auricular-outline_grey-93d2e4ef.svg" class="header-contact-icon" alt="Phone auricular outline grey" />
+          <div class="header-contact-title">Call us on:</div>
+          <div class="header-contact-title _2"><a wf-temp-elem="" class="link header-contact-link" href="tel:+31858000380">+31 (0)85 8000 380</a>
+          </div>
+        </div>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/email-envelope-outline_grey-1b7eac57.svg" class="header-contact-icon" alt="Email envelope outline grey" />
+          <div class="w-hidden-small w-hidden-tiny header-contact-title">Questions?</div>
+          <div class="header-contact-title _2"><a class="link header-contact-link" href="mailto:info@qbaylogic.com">Send us an e-mail</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div data-collapse="small" data-animation="default" data-duration="400" data-contain="1" class="w-nav navbar">
+      <div class="w-container nav-container">
+        <nav role="navigation" class="w-nav-menu nav-menu"><a href="/" class="w-nav-link nav-link">Home</a>
+          <div data-delay="400" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>Our services</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/fpga-design.html" class="w-dropdown-link dropdown-link-item">FPGA design</a><a href="/workshops-training.html" class="w-dropdown-link dropdown-link-item">Workshops &amp; Training</a><a href="/clash-support.html" class="w-dropdown-link dropdown-link-item">CλaSH support</a>
+            </nav>
+          </div>
+          <div data-delay="200" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>About us</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/about-clash.html" class="w-dropdown-link dropdown-link-item">About CλaSH</a><a href="/our-team.html" class="w-dropdown-link dropdown-link-item">Our team</a>
+            </nav>
+          </div><a href="/blog.html" class="w-nav-link nav-link">Blog archive</a><a href="/testimonials.html" class="w-nav-link nav-link">CLash&nbsp;Testimonials</a><a href="/contact-us.html" class="w-nav-link nav-link">Contact us</a>
+        </nav>
+        <div class="w-nav-button menu-button">
+          <div class="w-icon-nav-menu"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="w-section section tint">
+  <div class="w-container">
+    <div class="w-row recent-news-row">
+      <div class="w-col w-col-9 overall-content-column-left">
+        <div class="blog-post">
+          <div class="blog-post-header-image-block" style="background: url('../../../../images/code3-c14b408f.jpg'); background-size: 100% 280px "></div>
+          <h1 class="blog-post-title">Solving GHCs KnownNat constraints</h1>
+          <div class="blog-post-date">Aug 10, 2016</div>
+          <div class="w-richtext">
+            <p>If you have ever worked with <a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html">GHC.TypeLits</a> then you have probably encountered an error that is very similar to:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a>Test.hs:9:7: error:
+<a name="line-2"></a>    • Could not deduce (KnownNat (n + 2))
+<a name="line-3"></a>        arising from a use of ‘natVal’
+<a name="line-4"></a>      from the context: KnownNat n
+<a name="line-5"></a>        bound by the type signature for:
+<a name="line-6"></a>                   f :: KnownNat n =&gt; Proxy n -&gt; Integer
+<a name="line-7"></a>        at Test.hs:7:1-48
+</pre></div>
+<p>In our case, the above error originates in the following file:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds, ScopedTypeVariables, TypeOperators #-}</span>
+<a name="line-2"></a><span class="kr">module</span> <span class="nn">Test</span> <span class="kr">where</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-5"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>
+<a name="line-6"></a>
+<a name="line-7"></a><span class="nf">f</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">n</span> <span class="o">.</span> <span class="kt">KnownNat</span> <span class="n">n</span> <span class="ow">=&gt;</span> <span class="kt">Proxy</span> <span class="n">n</span> <span class="ow">-&gt;</span> <span class="kt">Integer</span>
+<a name="line-8"></a><span class="nf">f</span> <span class="kr">_</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span>
+<a name="line-9"></a>      <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+<p>The problem is that, even though we have a <code>KnownNat n</code> (a <em>type</em>-level natural <code>n</code> which we can reflect to a <em>term</em>-level <code>Integer</code>), GHC cannot infer <code>KnownNat (n+2)</code>.
+You would think that, in 2016, given a natural number <code>n</code>, an advanced compiler such as GHC should <em>surely</em> be able to infer the value corresponding to the natural number <code>n + 2</code>: you simply add 2 to already given <code>n</code>.
+Sadly, GHC can not do this… and, <em>surely</em>, <a href="https://www.reddit.com/r/haskell/comments/40j8zf/is_the_ghctypelits_api_unfinished/">complaints</a> <a href="https://github.com/clash-lang/ghc-typelits-natnormalise/issues/8">were</a> <a href="http://stackoverflow.com/questions/32839389/can-i-get-knownnat-n-to-imply-knownnat-n-3-etc">made</a>.</p>
+
+<h1 id="a-type-checker-plugin-for-solving-knownnat-constraints">A type-checker plugin for solving KnownNat constraints</h1>
+
+<p>As I've blogged about in another <a href="/blog/2016/05/10/type-checker-plugin.html">post</a>, GHC supports so-called <a href="https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/compiler-plugins.html#typechecker-plugins">type-checker plugins</a> since version 7.10.1.
+Type checker plugins let us extend GHC's constraint solver, i.e., extend the range of programs GHC can type check.</p>
+
+<p>So, given that GHC 7.10.1 was released on March 27 2015, surely somebody must have already written a type-checker plugin that can fix our annoying <code>KnownNat</code> issue, right?
+Well, even if someone did, such a plugin has never been released on <a href="http://hackage.haskell.org/">hackage</a>, until today that is: <a href="https://hackage.haskell.org/package/ghc-typelits-knownnat">https://hackage.haskell.org/package/ghc-typelits-knownnat</a></p>
+
+<p>By just adding the following line:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}</span>
+</pre></div>
+<p>to our program:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds, ScopedTypeVariables, TypeOperators #-}</span>
+<a name="line-2"></a>
+<a name="line-3"></a><span class="cm">{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}</span>
+<a name="line-4"></a>
+<a name="line-5"></a><span class="kr">module</span> <span class="nn">Test</span> <span class="kr">where</span>
+<a name="line-6"></a>
+<a name="line-7"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-8"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>
+<a name="line-9"></a>
+<a name="line-10"></a><span class="nf">f</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">n</span> <span class="o">.</span> <span class="kt">KnownNat</span> <span class="n">n</span> <span class="ow">=&gt;</span> <span class="kt">Proxy</span> <span class="n">n</span> <span class="ow">-&gt;</span> <span class="kt">Integer</span>
+<a name="line-11"></a><span class="nf">f</span> <span class="kr">_</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span>
+<a name="line-12"></a>      <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+<p>we can finally see that "all is right with the world (of KnownNat)":</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a>$ ghci -XDataKinds -XTypeApplications Test.hs
+<a name="line-2"></a>GHCi, version 8.0.1: http://www.haskell.org/ghc/  :? for help
+<a name="line-3"></a>[1 of 1] Compiling Test             ( Test.hs, interpreted )
+<a name="line-4"></a>Ok, modules loaded: Test.
+<a name="line-5"></a>*Test&gt; f (Proxy @2)
+<a name="line-6"></a>6
+</pre></div>
+<h1 id="creating-this-type-checker-plugin">Creating this type-checker plugin</h1>
+
+<p>Now, there are probably a multitude of reasons as to why a plugin for solving <code>KnownNat</code> constraints wasn't build/released before now; one of the likely reasons being that both the GHC API, and type-checker plugins, are somewhat obscure.
+Then again, I, the author of this post, <em>have</em> written <a href="http://hackage.haskell.org/package/ghc-typelits-natnormalise">several</a> <a href="http://hackage.haskell.org/package/ghc-typelits-extra">type-checker plugins</a>, and I <em>am</em> (at least somewhat) familiar with those parts of the GHC API that are involved with constraint solving.
+So what are the reasons that <em>I</em> didn't build such a plugin (much) earlier:</p>
+
+<ol>
+  <li>To be honest, I was personally never too bothered with typing in the extra <code>KnownNat</code> constraints.
+That is, until I <a href="https://github.com/clash-lang/clash-prelude/commit/e5a6a0ac24ca6c2af59e7410965e69c7b5c42c06">wanted to simplify</a> the API of one of the libraries that I work on.</li>
+  <li>I thought <a href="https://github.com/clash-lang/ghc-typelits-natnormalise/issues/8#issuecomment-237529270">it couldn't be done</a>.</li>
+</ol>
+
+<p>I will now focus on point 2, the reason I thought it couldn't be done.</p>
+
+<h3 id="evidence-for-knownnat-constraints">Evidence for KnownNat constraints</h3>
+
+<p>Basically, what Type checker plugins must do is provide <em>evidence</em> for the constraints GHC wants them to solve; where this <em>evidence</em> takes on the form of <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/TcEvidence.html#t:EvTerm">EvTerm</a>:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">data</span> <span class="kt">EvTerm</span>
+<a name="line-2"></a>  <span class="ow">=</span> <span class="kt">EvId</span> <span class="kt">EvId</span>
+<a name="line-3"></a>  <span class="c1">-- ^ Any sort of evidence Id, including coercions</span>
+<a name="line-4"></a>
+<a name="line-5"></a>  <span class="o">|</span> <span class="kt">EvCoercion</span> <span class="kt">TcCoercion</span>
+<a name="line-6"></a>  <span class="c1">-- ^ coercion bindings</span>
+<a name="line-7"></a>  <span class="c1">-- See Note [Coercion evidence terms]</span>
+<a name="line-8"></a>
+<a name="line-9"></a>  <span class="o">|</span> <span class="kt">EvCast</span> <span class="kt">EvTerm</span> <span class="kt">TcCoercionR</span>
+<a name="line-10"></a>  <span class="c1">-- ^ d |&gt; co</span>
+<a name="line-11"></a>
+<a name="line-12"></a>  <span class="o">|</span> <span class="kt">EvDFunApp</span> <span class="kt">DFunId</span> <span class="p">[</span><span class="kt">Type</span><span class="p">]</span> <span class="p">[</span><span class="kt">EvTerm</span><span class="p">]</span>
+<a name="line-13"></a>  <span class="c1">-- ^ Dictionary instance application</span>
+<a name="line-14"></a>
+<a name="line-15"></a>  <span class="o">|</span> <span class="kt">EvDelayedError</span> <span class="kt">Type</span> <span class="kt">FastString</span>
+<a name="line-16"></a>  <span class="c1">-- ^Used with Opt_DeferTypeErrors</span>
+<a name="line-17"></a>  <span class="c1">-- See Note [Deferring coercion errors to runtime] in TcSimplify</span>
+<a name="line-18"></a>
+<a name="line-19"></a>  <span class="o">|</span> <span class="kt">EvSuperClass</span> <span class="kt">EvTerm</span> <span class="kt">Int</span>
+<a name="line-20"></a>  <span class="c1">-- ^ n&#39;th superclass. Used for both equalities and</span>
+<a name="line-21"></a>  <span class="c1">-- dictionaries, even though the former have no</span>
+<a name="line-22"></a>  <span class="c1">-- selector Id.  We count up from _0_</span>
+<a name="line-23"></a>
+<a name="line-24"></a>  <span class="o">|</span> <span class="kt">EvLit</span> <span class="kt">EvLit</span>
+<a name="line-25"></a>  <span class="c1">-- ^ Dictionary for KnownNat and KnownSymbol classes.</span>
+<a name="line-26"></a>  <span class="c1">-- Note [KnownNat &amp; KnownSymbol and EvLit]</span>
+<a name="line-27"></a>
+<a name="line-28"></a>  <span class="o">|</span> <span class="kt">EvCallStack</span> <span class="kt">EvCallStack</span>
+<a name="line-29"></a>  <span class="c1">-- ^ Dictionary for CallStack implicit parameters</span>
+<a name="line-30"></a>
+<a name="line-31"></a>  <span class="o">|</span> <span class="kt">EvTypeable</span> <span class="kt">Type</span> <span class="kt">EvTypeable</span>
+<a name="line-32"></a>  <span class="c1">-- ^ Dictionary for (Typeable ty)</span>
+</pre></div>
+<p>Where, for example, the evidence for a <code>KnownNat 8</code> constraint, would be encoded by <code>EvLit (EvNum 8)</code>.
+OK, so what's the problem with <code>EvTerm</code>?
+Well, let me first explain what we are trying to do:</p>
+
+<ul>
+  <li>Given e.g. evidence for <code>KnownNat n</code> and <code>KnownNat 2</code></li>
+  <li>We want to add the two values of the evidence to create evidence for <code>KnownNat (n+2)</code>.</li>
+</ul>
+
+<p>And this is where we run into problems: <code>EvTerm</code> does not have a constructor for adding two <code>KnownNat</code> evidence terms.
+Actually, the more general problem is that it doesn't allow us to create (arbitrary) <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#t:Expr">Core</a> expressions which will perform the addition.
+This problem is discussed in more detail at: <a href="https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm">https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm</a>.</p>
+
+<p>So, this made me think that it was simply not possible to create a <code>KnownNat</code> solver given the current (version 8.0.1) state of the GHC API.
+And then, yesterday (August 9th, 2016), just before bed, after staring for some time at the <code>EvTerm</code> definition, I realised I could use the <code>EvDFunApp</code> constructor to do what I want!</p>
+
+<h3 id="building-a-dictionary-function">Building a dictionary (function)</h3>
+
+<p>As some of you might already know, class constraints in Haskell are translated to so-called dictionaries by GHC.
+A dictionary is record, where the fields correspond to the methods (and super-classes) of the class.
+So, e.g. for the <code>Eq</code> class:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">class</span> <span class="kt">Eq</span> <span class="n">a</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="p">(</span><span class="o">==</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+<a name="line-3"></a>  <span class="p">(</span><span class="o">/=</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+<p>GHC creates the following dictionary:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">data</span> <span class="kt">DEq</span> <span class="n">a</span>
+<a name="line-2"></a>  <span class="ow">=</span> <span class="kt">DEq</span>
+<a name="line-3"></a>  <span class="p">{</span> <span class="p">(</span><span class="o">==$</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+<a name="line-4"></a>  <span class="p">,</span> <span class="p">(</span><span class="o">/=$</span><span class="p">)</span> <span class="ow">::</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">Bool</span>
+<a name="line-5"></a>  <span class="p">}</span>
+</pre></div>
+<p>Now, what perhaps fewer people know, is that for instances with class constraints, GHC creates <em>dictionary functions</em>: functions that create dictionaries.
+i.e. given the instance:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">Eq</span> <span class="n">a</span><span class="p">,</span> <span class="kt">Eq</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">Eq</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="p">(</span><span class="o">==</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="ow">=</span> <span class="n">a</span> <span class="o">==</span> <span class="n">c</span> <span class="o">&amp;&amp;</span> <span class="n">b</span> <span class="o">==</span> <span class="n">d</span>
+<a name="line-3"></a>  <span class="p">(</span><span class="o">/=</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="ow">=</span> <span class="n">a</span> <span class="o">/=</span> <span class="n">c</span> <span class="o">||</span> <span class="n">b</span> <span class="o">/=</span> <span class="n">d</span>
+</pre></div>
+<p>GHC creates a dictionary function:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">dfunEqTup</span> <span class="n">d1</span> <span class="n">d2</span> <span class="ow">=</span>
+<a name="line-2"></a>  <span class="kt">DEq</span> <span class="p">{</span> <span class="p">(</span><span class="o">==$</span><span class="p">)</span> <span class="ow">=</span> <span class="nf">\</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="p">(</span><span class="o">&amp;&amp;</span><span class="p">)</span> <span class="p">((</span><span class="o">==</span><span class="p">)</span> <span class="n">d1</span> <span class="n">a</span> <span class="n">c</span><span class="p">)</span>
+<a name="line-3"></a>                                     <span class="p">((</span><span class="o">==</span><span class="p">)</span> <span class="n">d2</span> <span class="n">b</span> <span class="n">d</span><span class="p">)</span>
+<a name="line-4"></a>      <span class="p">,</span> <span class="p">(</span><span class="o">/=$</span><span class="p">)</span> <span class="ow">=</span> <span class="nf">\</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="p">(</span><span class="o">||</span><span class="p">)</span> <span class="p">((</span><span class="o">/=</span><span class="p">)</span> <span class="n">d1</span> <span class="n">a</span> <span class="n">c</span><span class="p">)</span>
+<a name="line-5"></a>                                     <span class="p">((</span><span class="o">/=</span><span class="p">)</span> <span class="n">d2</span> <span class="n">b</span> <span class="n">d</span><span class="p">)</span>
+<a name="line-6"></a>      <span class="p">}</span>
+</pre></div>
+<p>Now that we know what <em>dictionary functions</em> are, we can come back to the <code>EvDFunApp</code> constructor of <code>EvTerm</code>.
+<code>EvDFunApp</code> applies dictionaries to a given <em>dictionary function</em>.
+That is, where <em>dictionary functions</em> are our <em>evidence-level</em> lambdas, <code>EvDFunApp</code> is our <em>evidence-level</em> application.
+This means that all we need to do is figure out how to write an instance that gives us our <em>evidence-level</em> arithmetic operations, and we would be in business.</p>
+
+<h3 id="evidence-level-addition">Evidence-level addition</h3>
+
+<p>Below follows the code for our specially crafted class, and corresponding instance, so that we get an <em>evidence-level</em> addition operation:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE AllowAmbiguousTypes   #-}</span>
+<a name="line-2"></a><span class="cm">{-# LANGUAGE DataKinds             #-}</span>
+<a name="line-3"></a><span class="cm">{-# LANGUAGE FlexibleInstances     #-}</span>
+<a name="line-4"></a><span class="cm">{-# LANGUAGE KindSignatures        #-}</span>
+<a name="line-5"></a><span class="cm">{-# LANGUAGE MultiParamTypeClasses #-}</span>
+<a name="line-6"></a><span class="cm">{-# LANGUAGE ScopedTypeVariables   #-}</span>
+<a name="line-7"></a><span class="cm">{-# LANGUAGE TypeApplications      #-}</span>
+<a name="line-8"></a><span class="cm">{-# LANGUAGE TypeOperators         #-}</span>
+<a name="line-9"></a>
+<a name="line-10"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>
+<a name="line-11"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-12"></a>
+<a name="line-13"></a><span class="kr">newtype</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">n</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="kt">Integer</span>
+<a name="line-14"></a>
+<a name="line-15"></a><span class="kr">class</span> <span class="kt">KnownNatAdd</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-16"></a>  <span class="n">natSingAdd</span> <span class="ow">::</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+<a name="line-17"></a>
+<a name="line-18"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNatAdd</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-19"></a>  <span class="n">natSingAdd</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>For the above code, GHC will generate the desired <em>dictionary function</em> to do <em>evidence-level</em> addition:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">dfunKnownNatAdd</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">a</span> <span class="n">b</span> <span class="o">.</span> <span class="kt">DKnownNat</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="kt">DKnownNat</span> <span class="n">b</span>
+<a name="line-2"></a>                <span class="ow">-&gt;</span> <span class="kt">DKnownNatAdd</span> <span class="n">a</span> <span class="n">b</span>
+<a name="line-3"></a><span class="nf">dfunKnownNatAdd</span> <span class="n">kn1</span> <span class="n">kn2</span> <span class="ow">=</span>
+<a name="line-4"></a>  <span class="kt">DKnownNatAdd</span> <span class="p">{</span> <span class="n">natSingAdd</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="n">kn1</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span>
+<a name="line-5"></a>                                      <span class="n">natVal</span> <span class="n">kn2</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+<a name="line-6"></a>               <span class="p">}</span>
+</pre></div>
+<p>OK, so we can now build a <code>DKnownNatAdd</code> dictionary, however, this only gives us <em>evidence</em> for a <code>KnownNatAdd</code> constraint, but not for a <code>KnownNat</code> constraint.
+And this is where another lesser-known aspect of GHCs translation of classes comes in:</p>
+
+<ul>
+  <li>Single method classes are represented by <code>newtype</code> dictionaries in GHC.</li>
+</ul>
+
+<p>And, we can safe <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#v:Cast">cast</a> a <code>newtype</code> to (and from) its underlying representation using <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/Coercion.html#t:Coercion">coercions</a>.
+Looking at the code for our <em>evidence-level</em> addition, we can now see that:</p>
+
+<ul>
+  <li><code>KnownNatAdd</code> is nothing more than a <code>newtype</code> wrapper around <code>SNatKn</code></li>
+  <li><code>SNatKn</code> is a newtype wrapper around <code>Integer</code>.</li>
+</ul>
+
+<p>And, when we take a look at the (hidden) <a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/src/GHC.TypeLits.html#KnownNat">definition</a> of <code>KnownNat</code>:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">newtype</span> <span class="kt">SNat</span> <span class="p">(</span><span class="n">n</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">SNat</span> <span class="kt">Integer</span>
+<a name="line-2"></a>
+<a name="line-3"></a><span class="kr">class</span> <span class="kt">KnownNat</span> <span class="p">(</span><span class="n">n</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-4"></a>  <span class="n">natSing</span> <span class="ow">::</span> <span class="kt">SNat</span> <span class="n">n</span>
+</pre></div>
+<p>we see that <code>KnownNat</code> is, ultimately, also nothing more than a <code>newtype</code> wrapper around <code>Integer</code>.
+This means we can safely cast our <code>DKnownNatAdd</code> dictionary to the <code>DKnownNat</code> dictionary (the code for these coercions can be found <a href="https://github.com/clash-lang/ghc-typelits-knownnat/blob/f3977e5583040683b4f17d5548c5d996653c27d8/src/GHC/TypeLits/KnownNat/Solver.hs#L283">here</a>):</p>
+
+<ol>
+  <li>KnownNatAdd a b ~ SNatKn (a + b)</li>
+  <li>SNatKn (a + b) ~ Integer</li>
+  <li>Integer ~ SNat (a + b)</li>
+  <li>SNat (a + b) ~ KnownNat (a + b)</li>
+</ol>
+
+<p>And that's it:</p>
+
+<ol>
+  <li>We have our <code>DKnownNatAdd</code> dictionary function for <em>evidence-level</em> addition.</li>
+  <li>A way to safely cast a <code>DKnownNatAdd</code> dictionary to a <code>DKnownNat</code> dictionary, the evidence for <code>KnownNat</code> constraints.</li>
+</ol>
+
+<h1 id="closing-thoughts">Closing thoughts</h1>
+
+<p>So now finally, on August 10th 2016, using the <a href="https://hackage.haskell.org/package/ghc-typelits-knownnat">ghc-typelits-knownnat</a> type checker plugin, GHC can finally solve "complex" <code>KnownNat</code> constraints from other simple, single variable, <code>KnownNat</code> constraints.
+So does that mean it can infer all kinds of "complex" <code>KnownNat</code> constraints? Well… no, it can (currently) only infer constraints involving:</p>
+
+<ul>
+  <li>Type-level natural numbers</li>
+  <li>Type variables</li>
+  <li>Applications of the following type-level operations: <code>+</code>, <code>*</code>, and <code>^</code>.</li>
+</ul>
+
+<p>i.e. it cannot solve constraints involving subtraction (<code>-</code>) or user-specified type-level operations on type-level naturals, such as:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">import</span> <span class="nn">Data.Type.Bool</span>
+<a name="line-2"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Min</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span>
+<a name="line-5"></a>  <span class="kr">where</span>
+<a name="line-6"></a>    <span class="kt">Min</span> <span class="n">x</span> <span class="n">y</span> <span class="ow">=</span> <span class="kt">If</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;=?</span> <span class="n">y</span><span class="p">)</span> <span class="n">x</span> <span class="n">y</span>
+</pre></div>
+<p>Where the problem with subtraction is that it is a partial function on natural numbers.
+Let's say someone writes:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">g</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">n</span> <span class="o">.</span> <span class="kt">KnownNat</span> <span class="n">n</span> <span class="ow">=&gt;</span> <span class="kt">Proxy</span> <span class="n">n</span> <span class="ow">-&gt;</span> <span class="kt">Integer</span>
+<a name="line-2"></a><span class="nf">g</span> <span class="kr">_</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span>
+<a name="line-3"></a>      <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+<p>then we should not just automatically solve the <code>KnownNat (n-4)</code> constraint from the given <code>KnownNat n</code> constraint, because for <code>0 &lt;= n &lt; 4</code>, <code>n-4</code> is not a natural number.
+In this case, we should only automatically infer <code>KnownNat (n-4)</code> when an additional <code>4 &lt;= n</code> constraint is given:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">g&#39;</span> <span class="ow">::</span> <span class="n">forall</span> <span class="n">n</span> <span class="o">.</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">n</span><span class="p">,</span> <span class="mi">4</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">Proxy</span> <span class="n">n</span> <span class="ow">-&gt;</span> <span class="kt">Integer</span>
+<a name="line-2"></a><span class="nf">g&#39;</span> <span class="kr">_</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span>
+<a name="line-3"></a>       <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+<p>I think I know how to check for these additional constraints, so a future version of the plugin will automatically solve <code>KnownNat</code> constraints involving subtractions.
+For user-defined type-level natural operations we are currently out of luck: unlike for the standard operations in <code>GHC.TypeLits</code>, we cannot encode the corresponding <em>dictionary functions</em> beforehand.
+Perhaps, once arbitrary Core expressions can be used as evidence (discussed <a href="https://ghc.haskell.org/trac/ghc/wiki/Plugins/TypeChecker#Underdiscussion:EmbeddingCoreExprinEvTerm">here</a>), we can reflect type-level operations to evidence-level operations, and then also automatically solve <code>KnownNat</code> constraints over user-defined type-level operations.</p>
+
+
+          </div>
+          <div class="w-embed">
+              <div class="addthis_sharing_toolbox"></div>
+            </div>
+          </div>
+          <div class="w-clearfix blog-author-block"><img src="../../../../images/christiaan-b33f5da1.jpg" class="blog-author-image" alt="Christiaan" />
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2">Christiaan Baaij</div>
+          </div>
+          <div class="w-embed w-script">
+            <div id='disqus_thread'></div>
+<script type='text/javascript'>
+//<![CDATA[
+                  var disqus_shortname = 'qbaylogic';
+          
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+//]]>
+</script>
+<noscript>Please enable JavaScript to view the <a href='http://disqus.com/?ref_noscript'>comments powered by Disqus.</a></noscript>
+<a href='http://disqus.com' class='dsq-brlink'>comments powered by <span class='logo-disqus'>Disqus</span></a>
+
+          </div>
+        </div>
+        <div class="w-col w-col-3 overall-sidebar-col-right">
+          <div class="widget-block"><a href="fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="clash-support.html" class="link sidebar-list-link">CλaSH support</a>
+          </div>
+          <div class="widget-block">
+            <a href="about-clash.html" class="w-inline-block widget-image-block">
+              <div class="widget-image-block-overlay">
+                <div class="image-block-title">About CλaSH</div>
+                <div class="button">learn more</div>
+              </div>
+            </a>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <div class="w-clearfix content-info-block"><img src="../../../../images/location-pin-42237a1d.svg" class="contact-icon" alt="Location pin" />
+                <div class="contact-block-title">Visit us</div>
+                <p class="contact-info-text">Institutenweg 25A
+                  <br>7521 PH Enschede
+                  <br>The Netherlands</p>
+              </div>
+              <div class="w-clearfix content-info-block"><img src="../../../../images/telephone-handle-silhouette-2f25d8f5.svg" class="contact-icon" alt="Telephone handle silhouette" />
+                <div class="contact-block-title">Call us</div>
+                <p class="contact-info-text">Call us on <a href="tel:+31858000380" class="link">+31&nbsp;(0)85&nbsp;8000&nbsp;380</a>
+                </p>
+              </div>
+              <div class="w-clearfix content-info-block last"><img src="../../../../images/email-filled-closed-envelope-0e8ca69e.svg" class="contact-icon" alt="Email filled closed envelope" />
+                <div class="contact-block-title">Mail us</div>
+                <p class="contact-info-text">Mail us on <a class="link" href="mailto:info@qbaylogic.com">info@qbaylogic.com</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <ul class="w-list-unstyled icon-list">
+                <li class="icon-list-item smaller"><img src="../../../../images/computer-microprocessor-2-a05bac1b.svg" class="list-icon small" alt="Computer microprocessor 2" />
+                  <div class="list-title">FPGA engineers</div>
+                  <p>We apply FPGA technology in domains with difficult mathematical problems, where solutions need low latencies and high performance.</p>
+                </li>
+                <li class="icon-list-item smaller"><img src="../../../../images/mathematic-operations-buttons-c1ed5c5c.svg" class="list-icon small" alt="Mathematic operations buttons" />
+                  <div class="list-title">Creators of CλaSH</div>
+                  <p>We have developed CλaSH, a functional hardware description language, providing unprecedented abstraction mechanisms for FPGA design.</p>
+                </li>
+                <li class="icon-list-item smaller last"><img src="../../../../images/teacher-26918785.svg" class="list-icon small" alt="Teacher" />
+                  <div class="list-title">Experienced educators</div>
+                  <p>Our workshops and training are based on 30+ years of experience in teaching students at bachelor, master, and phd level.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5735ce1812343b0e"></script>
+
+
+  <div class="w-section footer">
+    <div class="footer-overlay">
+      <div class="w-container container">
+        <div class="w-row footer-row">
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">About us</div>
+            <p><strong>QBayLogic B.V.</strong>
+              <br>Institutenweg 25A
+              <br>7521 PH Enschede
+              <br>
+              <br>KvK: 66440483
+              <br>VAT: NL856554558B01</p>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Contact us</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item">
+                <p><strong>Postal address:<br></strong>QBayLogic B.V.
+                  <br>Institutenweg 25A
+                  <br>7521 PH Enschede</p>
+              </li>
+              <li class="footer-list-item"><a href="tel:+31858000380" class="link footer-link">+31 (0)85 8000 380</a>
+              </li>
+              <li class="footer-list-item"><a href="mailto:info@qbaylogic.com" class="link footer-link">info@qbaylogic.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Useful links</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/about-clash.html" class="link footer-link">About CλaSH</a>
+              </li>
+              <li class="footer-list-item"><a href="/our-team.html" class="link footer-link">Our team</a>
+              </li>
+              <li class="footer-list-item"><a href="/services-overview.html" class="link footer-link">Our services</a>
+              </li>
+              <li class="footer-list-item"><a href="/blog.html" class="link footer-link">Blog Archive</a>
+              </li>
+              <li class="footer-list-item"><a href="/contact-us.html" class="link footer-link">Contact us</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Services</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/fpga-design.html" class="link footer-link">FPGA design</a>
+              </li>
+              <li class="footer-list-item"><a href="/workshops-training.html" class="link footer-link">Workshops &amp; Training</a>
+              </li>
+              <li class="footer-list-item"><a href="/clash-support.html" class="link footer-link">CλaSH support</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="../../../../javascripts/webflow-6eade1f3.js"></script>
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-77540661-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
