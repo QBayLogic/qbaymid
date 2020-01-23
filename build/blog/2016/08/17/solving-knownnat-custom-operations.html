@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Solving custom operations in KnownNat constraints</title>
+  <meta property="og:title" content="QBayLogic">
+  <meta property="og:description" content="QBayLogic is a spin-off company of the University of Twente, Enschede, The Netherlands. We apply FPGA technology in domains with difficult mathematical problems.">
+  <meta name="twitter:card" content="summary">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../../../../stylesheets/site-393324d2.css" rel="stylesheet" />
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js"></script>
+  <script>
+    WebFont.load({
+      google: {
+        families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic","Montserrat:400,700","Cardo:regular,italic,700","Reenie Beanie:regular"]
+      }
+    });
+  </script>
+  <script src="../../../../javascripts/modernizr-05933cc1.js"></script>
+  <link rel="shortcut icon" type="image/x-icon" href="../../../../images/logo_ico_small-ba7e953f.png">
+  <link rel="apple-touch-icon" href="../../../../images/Logo-389f0112.png">
+</head>
+<body>
+  <div class="w-section header-wrapper">
+    <div class="top-header">
+      <div class="w-container container">
+        <div class="top-nav-content-block social">
+          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/facebook_white-61c83ff3.svg" class="top-social-icon" alt="Facebook white" />
+          </a>
+          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/twitter_white-2b2bd36d.svg" class="top-social-icon" alt="Twitter white" />
+          </a>
+          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/linkedin-logo_white-c0d672b6.svg" class="top-social-icon" alt="Linkedin logo white" />
+          </a>
+        </div>
+        <div class="top-nav-content-block">
+          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><img src="../../../../images/gb-5afd0a44.png" class="top-nav-icon" alt="Gb" />
+          </a>
+          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><img src="../../../../images/nl-5f381ef4.png" class="top-nav-icon" alt="Nl" />
+          </a>
+        </div>
+        <div class="w-hidden-small w-hidden-tiny top-nav-content-block left">
+          <div class="header-contact-text">We are FPGA engineers located in Enschede, The Netherlands.</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-header">
+      <div class="w-container container">
+        <a href="index.html" class="w-nav-brand logo-container"><img src="../../../../images/Logo-109_new-ok-e0a01a25.png" class="logo" alt="Logo 109 new ok" />
+        </a>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/phone-auricular-outline_grey-93d2e4ef.svg" class="header-contact-icon" alt="Phone auricular outline grey" />
+          <div class="header-contact-title">Call us on:</div>
+          <div class="header-contact-title _2"><a wf-temp-elem="" class="link header-contact-link" href="tel:+31858000380">+31 (0)85 8000 380</a>
+          </div>
+        </div>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/email-envelope-outline_grey-1b7eac57.svg" class="header-contact-icon" alt="Email envelope outline grey" />
+          <div class="w-hidden-small w-hidden-tiny header-contact-title">Questions?</div>
+          <div class="header-contact-title _2"><a class="link header-contact-link" href="mailto:info@qbaylogic.com">Send us an e-mail</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div data-collapse="small" data-animation="default" data-duration="400" data-contain="1" class="w-nav navbar">
+      <div class="w-container nav-container">
+        <nav role="navigation" class="w-nav-menu nav-menu"><a href="/" class="w-nav-link nav-link">Home</a>
+          <div data-delay="400" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>Our services</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/fpga-design.html" class="w-dropdown-link dropdown-link-item">FPGA design</a><a href="/workshops-training.html" class="w-dropdown-link dropdown-link-item">Workshops &amp; Training</a><a href="/clash-support.html" class="w-dropdown-link dropdown-link-item">CλaSH support</a>
+            </nav>
+          </div>
+          <div data-delay="200" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>About us</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/about-clash.html" class="w-dropdown-link dropdown-link-item">About CλaSH</a><a href="/our-team.html" class="w-dropdown-link dropdown-link-item">Our team</a>
+            </nav>
+          </div><a href="/blog.html" class="w-nav-link nav-link">Blog archive</a><a href="/testimonials.html" class="w-nav-link nav-link">CLash&nbsp;Testimonials</a><a href="/contact-us.html" class="w-nav-link nav-link">Contact us</a>
+        </nav>
+        <div class="w-nav-button menu-button">
+          <div class="w-icon-nav-menu"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="w-section section tint">
+  <div class="w-container">
+    <div class="w-row recent-news-row">
+      <div class="w-col w-col-9 overall-content-column-left">
+        <div class="blog-post">
+          <div class="blog-post-header-image-block" style="background: url('../../../../images/Breaking-Chain_min-feb3e29f.jpg'); background-size: 100% 280px "></div>
+          <h1 class="blog-post-title">Solving custom operations in KnownNat constraints</h1>
+          <div class="blog-post-date">Aug 17, 2016</div>
+          <div class="w-richtext">
+            <p>In my previous <a href="/blog/2016/08/10/solving-knownnat-constraints-plugin.html">post</a> I discussed a solver plugin for <code>KnownNat</code> constraints, and with regards to user-defined type-level operations, I said:</p>
+
+<blockquote>
+  <p>i.e. it cannot solve constraints involving subtraction (<code>-</code>) or user-specified type-level operations on type-level naturals […] For user-defined type-level natural operations we are currently out of luck: unlike for the standard operations in <code>GHC.TypeLits</code>, we cannot encode the corresponding <em>dictionary functions</em> beforehand.</p>
+</blockquote>
+
+<p>well… it turns our we do not have to know these corresponding <em>dictionary functions</em> beforehand.
+So, I'm hereby announcing <a href="http://hackage.haskell.org/package/ghc-typelits-knownnat-0.2">version 0.2 of the ghc-typelits-knownnat plugin</a>, which can now <strong>also</strong> solve <code>KnownNat</code> constraints over types consisting of:</p>
+
+<ul>
+  <li>Subtractions (<code>GHC.TypeLits.-</code>)</li>
+  <li>User-defined type-level functions</li>
+</ul>
+
+<h3 id="supporting-user-defined-operations">Supporting user-defined operations</h3>
+
+<p>So what is the "trick" for handling user-defined operations?
+Well, in my previous <a href="/blog/2016/08/10/solving-knownnat-constraints-plugin.html">post</a>, we defined a class, and corresponding instance for <em>every</em> type-level operation.
+For example, for addition (<code>GHC.TypeLits.+</code>), we defined:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">class</span> <span class="kt">KnownNatAdd</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="n">natSingAdd</span> <span class="ow">::</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNatAdd</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-5"></a>  <span class="n">natSingAdd</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span> <span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span> <span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>And for multiplication (<code>GHC.TypeLits.*</code>), we defined:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">class</span> <span class="kt">KnownNatMul</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="n">natSingMul</span> <span class="ow">::</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNatMul</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-5"></a>  <span class="n">natSingMul</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span> <span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span> <span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>However, what we would want, is a single type class for functions of a certain arity, and subsequently define multiple instances for this single class.
+We can then export these type-classes, and developers can add an instance for their own type-level operations, and the solver plugin can then just lookup these instances.</p>
+
+<p>Using some <a href="http://hackage.haskell.org/package/singletons">singletons</a> trickery we can define such a type class as:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="c1">-- | Class for arithmetic functions with /two/ arguments.</span>
+<a name="line-2"></a><span class="c1">--</span>
+<a name="line-3"></a><span class="c1">-- The &#39;Symbol&#39; /f/ must correspond to the fully qualified name of the</span>
+<a name="line-4"></a><span class="c1">-- type-level operation.</span>
+<a name="line-5"></a><span class="kr">class</span> <span class="kt">KnownNat2</span> <span class="p">(</span><span class="n">f</span> <span class="ow">::</span> <span class="kt">Symbol</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-6"></a>  <span class="kr">type</span> <span class="kt">KnownNatF2</span> <span class="n">f</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="o">~&gt;</span> <span class="kt">Nat</span> <span class="o">~&gt;</span> <span class="kt">Nat</span>
+<a name="line-7"></a>  <span class="n">natSing2</span> <span class="ow">::</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="kt">KnownNatF2</span> <span class="n">f</span> <span class="o">@@</span> <span class="n">a</span> <span class="o">@@</span> <span class="n">b</span><span class="p">)</span>
+</pre></div>
+<p>As it says in the comments, the first argument of this class is a type-level <em>Symbol</em> corresponding to the fully qualified name of the type-level operation.
+We need to do this, because, unlike normal type constructors (.i.e. <code>Maybe</code>), type families cannot be partially applied.
+This means we <strong>cannot</strong> write a class and corresponding instance of the form:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">class</span> <span class="kt">KnownNat2</span> <span class="p">(</span><span class="n">f</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="ow">-&gt;</span> <span class="kt">Nat</span> <span class="ow">-&gt;</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="n">natSing2</span> <span class="ow">::</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">f</span> <span class="n">a</span> <span class="n">b</span><span class="p">)</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="c1">-- this does not work: we cannot partially apply (+)</span>
+<a name="line-5"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNat2</span> <span class="p">(</span><span class="o">+</span><span class="p">)</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-6"></a>  <span class="n">natSing2</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>So, instead, for the first argument of the <code>KnownNat2</code>, we use a <code>Symbol</code> that corresponds to the name of the type-level operation.
+The solver plugin can then use the name of type-level operation to find the corresponding <code>KnownNat2</code> instance.</p>
+
+<p>Now, again due to the restriction on the partial application of type families, the associated type family <code>KnownNatF2</code> <strong>cannot</strong> be of kind:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">KnownNatF2</span> <span class="p">(</span><span class="n">f</span> <span class="ow">::</span> <span class="kt">Symbol</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="ow">-&gt;</span> <span class="kt">Nat</span> <span class="ow">-&gt;</span> <span class="kt">Nat</span>
+</pre></div>
+<p>Instead, we must use a <em>defunctionalised</em> form of our type-level operations, which are provided by the <a href="http://hackage.haskell.org/package/singletons">singletons</a> package:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">KnownNatF2</span> <span class="p">(</span><span class="n">f</span> <span class="ow">::</span> <span class="kt">Symbol</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="o">~&gt;</span> <span class="kt">Nat</span> <span class="o">~&gt;</span> <span class="kt">Nat</span>
+</pre></div>
+<p>Where the difference is that we use <code>~&gt;</code> (tilde-right_angle) instead of <code>-&gt;</code> (dash-right_angle).</p>
+
+<p>We can now define our addition and multiplication instances as:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNat2</span> <span class="s">&quot;GHC.TypeLits.+&quot;</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="kr">type</span> <span class="kt">KnownNatF2</span> <span class="s">&quot;GHC.TypeLits.+&quot;</span> <span class="ow">=</span> <span class="p">(</span><span class="kt">:+$</span><span class="p">)</span>
+<a name="line-3"></a>  <span class="n">natSing2</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+<a name="line-4"></a>
+<a name="line-5"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span> <span class="kt">KnownNat2</span> <span class="s">&quot;GHC.TypeLits.*&quot;</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-6"></a>  <span class="kr">type</span> <span class="kt">KnownNatF2</span> <span class="s">&quot;GHC.TypeLits.*&quot;</span> <span class="ow">=</span> <span class="p">(</span><span class="kt">:*$</span><span class="p">)</span>
+<a name="line-7"></a>  <span class="n">natSing2</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>And subtraction as:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">,</span> <span class="n">b</span> <span class="o">&lt;=</span> <span class="n">a</span><span class="p">)</span> <span class="ow">=&gt;</span>
+<a name="line-2"></a>  <span class="kt">KnownNat2</span> <span class="s">&quot;GHC.TypeLits.-&quot;</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-3"></a>    <span class="kr">type</span> <span class="kt">KnownNatF2</span> <span class="s">&quot;GHC.TypeLits.-&quot;</span> <span class="ow">=</span> <span class="p">(</span><span class="kt">:-$</span><span class="p">)</span>
+<a name="line-4"></a>    <span class="n">natSing2</span> <span class="ow">=</span> <span class="kt">SNatKn</span> <span class="p">(</span><span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span> <span class="o">-</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+<p>which gets an extra constraint that <code>KnownNat (a - b)</code> only holds when <code>b &lt;= a</code>.</p>
+
+<h3 id="adding-operations-to-the-solver">Adding operations to the solver</h3>
+
+<p>So now that we have a type-class for constraint-level arithmetic, what steps should a developer take so that her type-level functions are supported by the <a href="http://hackage.haskell.org/package/ghc-typelits-knownnat">ghc-typelits-knownnat</a> solver?
+We will give a short example.</p>
+
+<p>1.</p>
+
+<p>Enable some language extensions</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds, FlexibleInstances, GADTs, KindSignatures,</span>
+<a name="line-2"></a><span class="cm">             MultiParamTypeClasses, ScopedTypeVariables, TemplateHaskell,</span>
+<a name="line-3"></a><span class="cm">             TypeApplications, TypeFamilies, TypeOperators,</span>
+<a name="line-4"></a><span class="cm">             UndecidableInstances #-}</span>
+</pre></div>
+<p>2.</p>
+
+<p>Import the required modules</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>            <span class="p">(</span><span class="kt">Proxy</span> <span class="p">(</span><span class="o">..</span><span class="p">))</span>
+<a name="line-2"></a><span class="kr">import</span> <span class="nn">Data.Singletons.TH</span>    <span class="p">(</span><span class="nf">genDefunSymbols</span><span class="p">)</span>
+<a name="line-3"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits.KnownNat</span>
+<a name="line-4"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-5"></a>
+<a name="line-6"></a><span class="kr">import</span> <span class="nn">Data.Type.Bool</span>        <span class="p">(</span><span class="kt">If</span><span class="p">)</span> <span class="c1">-- used just for this example</span>
+</pre></div>
+<p>3.</p>
+
+<p>Define the type-level operation</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="c1">-- | Get the maximum of two type-level &#39;Nat&#39;s</span>
+<a name="line-2"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Max</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-3"></a>  <span class="kt">Max</span> <span class="mi">0</span> <span class="n">b</span> <span class="ow">=</span> <span class="n">b</span>
+<a name="line-4"></a>  <span class="kt">Max</span> <span class="n">a</span> <span class="n">b</span> <span class="ow">=</span> <span class="kt">If</span> <span class="p">(</span><span class="n">a</span> <span class="o">&lt;=?</span> <span class="n">b</span><span class="p">)</span> <span class="n">b</span> <span class="n">a</span>
+</pre></div>
+<p>One restriction is that such a type-level operation must have at least <strong>two</strong> equations.
+  This restriction is due GHC treating single-equation type families as type synonyms, which are expanded at the <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/ghc-8.0.1/CoreSyn.html#t:Expr">Core</a> level.</p>
+
+<p>That is, had we written our <code>Max</code> operation as a single-equation operation:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Max</span> <span class="p">(</span><span class="n">a</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">b</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-2"></a>  <span class="kt">Max</span> <span class="n">a</span> <span class="n">b</span> <span class="ow">=</span> <span class="kt">If</span> <span class="p">(</span><span class="n">a</span> <span class="o">&lt;=?</span> <span class="n">b</span><span class="p">)</span> <span class="n">b</span> <span class="n">a</span>
+</pre></div>
+<p>then a <code>KnownNat (Max x y)</code> constraint would show up as <code>KnownNat (If (x &lt;=? y) y x)</code> inside the solver plugin.
+  And, consequently, the solver wouldn't be able to look up the <code>KnownNat2</code> instance of <code>Max</code>.</p>
+
+<p>4.</p>
+
+<p>Use Template Haskell to generate the <em>defunctionalised</em> form of the type-level operation:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="o">$</span><span class="p">(</span><span class="n">genDefunSymbols</span> <span class="p">[</span><span class="kt">&#39;&#39;Max</span><span class="p">])</span>
+</pre></div>
+<p>This will create the following definitions:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a>MaxSym0 :: Nat ~&gt; Nat ~&gt; Nat
+<a name="line-2"></a>MaxSym1 :: Nat -&gt; Nat ~&gt; Nat
+<a name="line-3"></a>MaxSym2 :: Nat -&gt; Nat -&gt; Nat
+</pre></div>
+<p>where we need <code>MaxSym0</code>.</p>
+
+<p>5.</p>
+
+<p>And finally specify the <code>KnownNat2</code> instance:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">instance</span> <span class="p">(</span><span class="kt">KnownNat</span> <span class="n">a</span><span class="p">,</span> <span class="kt">KnownNat</span> <span class="n">b</span><span class="p">)</span> <span class="ow">=&gt;</span>
+<a name="line-2"></a>  <span class="kt">KnownNat2</span> <span class="o">$</span><span class="p">(</span><span class="n">nameToSymbol</span> <span class="kt">&#39;&#39;Max</span><span class="p">)</span> <span class="n">a</span> <span class="n">b</span> <span class="kr">where</span>
+<a name="line-3"></a>    <span class="kr">type</span> <span class="kt">KnownNatF2</span> <span class="o">$</span><span class="p">(</span><span class="n">nameToSymbol</span> <span class="kt">&#39;&#39;Max</span><span class="p">)</span> <span class="ow">=</span> <span class="kt">MaxSym0</span>
+<a name="line-4"></a>    <span class="n">natSing2</span> <span class="ow">=</span> <span class="kr">let</span> <span class="n">x</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">a</span><span class="p">)</span>
+<a name="line-5"></a>                   <span class="n">y</span> <span class="ow">=</span> <span class="n">natVal</span> <span class="p">(</span><span class="kt">Proxy</span> <span class="o">@</span><span class="n">b</span><span class="p">)</span>
+<a name="line-6"></a>                   <span class="n">z</span> <span class="ow">=</span> <span class="n">max</span> <span class="n">x</span> <span class="n">y</span>
+<a name="line-7"></a>               <span class="kr">in</span>  <span class="kt">SNatKn</span> <span class="n">z</span>
+</pre></div>
+<p>where we use the <code>nameToSymbol</code> (exported by <code>GHC.TypeLits.KnownNat</code>) function to converts a Template Haskell <code>Name</code> to a <code>Symbol</code>.</p>
+
+<h3 id="version-10">Version 1.0?</h3>
+
+<p>The <a href="http://hackage.haskell.org/package/ghc-typelits-knownnat">ghc-typelits-knownnat</a> solver plugin is now at version 0.2; and it supports:</p>
+
+<ul>
+  <li>All the type-level arithmetic functions of <a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html">GHC.TypeLits</a></li>
+  <li>User-defined type-level operations</li>
+</ul>
+
+<p>Which might make you wonder: if it basically supports all type-level operations on <code>Nat</code>, why isn't this version 1.0?</p>
+
+<p>Well, I probably should have called it 1.0, and perhaps I will call it that in a next bugfix release.
+However, there are still some aspects that would be nice to add/fix:</p>
+
+<ul>
+  <li>Add a <code>KnownBool</code> and <code>KnownOrdering</code> class and add support for the <a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#t:-60--61--63-">comparison</a> <a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html#t:-60--61--63-">operators</a> of <a href="http://hackage.haskell.org/package/base-4.9.0.0/docs/GHC-TypeLits.html">GHC.TypeLits</a>.</li>
+  <li>Find a way to index the <code>KnownNat&lt;N&gt;</code> classes that is less error-prone than a <code>Symbol</code> corresponding to the fully qualified name of the type-level operation.</li>
+</ul>
+
+          </div>
+          <div class="w-embed">
+              <div class="addthis_sharing_toolbox"></div>
+            </div>
+          </div>
+          <div class="w-clearfix blog-author-block"><img src="../../../../images/christiaan-b33f5da1.jpg" class="blog-author-image" alt="Christiaan" />
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2">Christiaan Baaij</div>
+          </div>
+          <div class="w-embed w-script">
+            <div id='disqus_thread'></div>
+<script type='text/javascript'>
+//<![CDATA[
+                  var disqus_shortname = 'qbaylogic';
+          
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+//]]>
+</script>
+<noscript>Please enable JavaScript to view the <a href='http://disqus.com/?ref_noscript'>comments powered by Disqus.</a></noscript>
+<a href='http://disqus.com' class='dsq-brlink'>comments powered by <span class='logo-disqus'>Disqus</span></a>
+
+          </div>
+        </div>
+        <div class="w-col w-col-3 overall-sidebar-col-right">
+          <div class="widget-block"><a href="fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="clash-support.html" class="link sidebar-list-link">CλaSH support</a>
+          </div>
+          <div class="widget-block">
+            <a href="about-clash.html" class="w-inline-block widget-image-block">
+              <div class="widget-image-block-overlay">
+                <div class="image-block-title">About CλaSH</div>
+                <div class="button">learn more</div>
+              </div>
+            </a>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <div class="w-clearfix content-info-block"><img src="../../../../images/location-pin-42237a1d.svg" class="contact-icon" alt="Location pin" />
+                <div class="contact-block-title">Visit us</div>
+                <p class="contact-info-text">Institutenweg 25A
+                  <br>7521 PH Enschede
+                  <br>The Netherlands</p>
+              </div>
+              <div class="w-clearfix content-info-block"><img src="../../../../images/telephone-handle-silhouette-2f25d8f5.svg" class="contact-icon" alt="Telephone handle silhouette" />
+                <div class="contact-block-title">Call us</div>
+                <p class="contact-info-text">Call us on <a href="tel:+31858000380" class="link">+31&nbsp;(0)85&nbsp;8000&nbsp;380</a>
+                </p>
+              </div>
+              <div class="w-clearfix content-info-block last"><img src="../../../../images/email-filled-closed-envelope-0e8ca69e.svg" class="contact-icon" alt="Email filled closed envelope" />
+                <div class="contact-block-title">Mail us</div>
+                <p class="contact-info-text">Mail us on <a class="link" href="mailto:info@qbaylogic.com">info@qbaylogic.com</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <ul class="w-list-unstyled icon-list">
+                <li class="icon-list-item smaller"><img src="../../../../images/computer-microprocessor-2-a05bac1b.svg" class="list-icon small" alt="Computer microprocessor 2" />
+                  <div class="list-title">FPGA engineers</div>
+                  <p>We apply FPGA technology in domains with difficult mathematical problems, where solutions need low latencies and high performance.</p>
+                </li>
+                <li class="icon-list-item smaller"><img src="../../../../images/mathematic-operations-buttons-c1ed5c5c.svg" class="list-icon small" alt="Mathematic operations buttons" />
+                  <div class="list-title">Creators of CλaSH</div>
+                  <p>We have developed CλaSH, a functional hardware description language, providing unprecedented abstraction mechanisms for FPGA design.</p>
+                </li>
+                <li class="icon-list-item smaller last"><img src="../../../../images/teacher-26918785.svg" class="list-icon small" alt="Teacher" />
+                  <div class="list-title">Experienced educators</div>
+                  <p>Our workshops and training are based on 30+ years of experience in teaching students at bachelor, master, and phd level.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5735ce1812343b0e"></script>
+
+
+  <div class="w-section footer">
+    <div class="footer-overlay">
+      <div class="w-container container">
+        <div class="w-row footer-row">
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">About us</div>
+            <p><strong>QBayLogic B.V.</strong>
+              <br>Institutenweg 25A
+              <br>7521 PH Enschede
+              <br>
+              <br>KvK: 66440483
+              <br>VAT: NL856554558B01</p>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Contact us</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item">
+                <p><strong>Postal address:<br></strong>QBayLogic B.V.
+                  <br>Institutenweg 25A
+                  <br>7521 PH Enschede</p>
+              </li>
+              <li class="footer-list-item"><a href="tel:+31858000380" class="link footer-link">+31 (0)85 8000 380</a>
+              </li>
+              <li class="footer-list-item"><a href="mailto:info@qbaylogic.com" class="link footer-link">info@qbaylogic.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Useful links</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/about-clash.html" class="link footer-link">About CλaSH</a>
+              </li>
+              <li class="footer-list-item"><a href="/our-team.html" class="link footer-link">Our team</a>
+              </li>
+              <li class="footer-list-item"><a href="/services-overview.html" class="link footer-link">Our services</a>
+              </li>
+              <li class="footer-list-item"><a href="/blog.html" class="link footer-link">Blog Archive</a>
+              </li>
+              <li class="footer-list-item"><a href="/contact-us.html" class="link footer-link">Contact us</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Services</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/fpga-design.html" class="link footer-link">FPGA design</a>
+              </li>
+              <li class="footer-list-item"><a href="/workshops-training.html" class="link footer-link">Workshops &amp; Training</a>
+              </li>
+              <li class="footer-list-item"><a href="/clash-support.html" class="link footer-link">CλaSH support</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="../../../../javascripts/webflow-6eade1f3.js"></script>
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-77540661-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>

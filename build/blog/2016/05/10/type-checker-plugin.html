@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GHC type checker plugins: adding new type-level operations</title>
+  <meta property="og:title" content="QBayLogic">
+  <meta property="og:description" content="QBayLogic is a spin-off company of the University of Twente, Enschede, The Netherlands. We apply FPGA technology in domains with difficult mathematical problems.">
+  <meta name="twitter:card" content="summary">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../../../../stylesheets/site-393324d2.css" rel="stylesheet" />
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js"></script>
+  <script>
+    WebFont.load({
+      google: {
+        families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic","Montserrat:400,700","Cardo:regular,italic,700","Reenie Beanie:regular"]
+      }
+    });
+  </script>
+  <script src="../../../../javascripts/modernizr-05933cc1.js"></script>
+  <link rel="shortcut icon" type="image/x-icon" href="../../../../images/logo_ico_small-ba7e953f.png">
+  <link rel="apple-touch-icon" href="../../../../images/Logo-389f0112.png">
+</head>
+<body>
+  <div class="w-section header-wrapper">
+    <div class="top-header">
+      <div class="w-container container">
+        <div class="top-nav-content-block social">
+          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/facebook_white-61c83ff3.svg" class="top-social-icon" alt="Facebook white" />
+          </a>
+          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/twitter_white-2b2bd36d.svg" class="top-social-icon" alt="Twitter white" />
+          </a>
+          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/linkedin-logo_white-c0d672b6.svg" class="top-social-icon" alt="Linkedin logo white" />
+          </a>
+        </div>
+        <div class="top-nav-content-block">
+          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><img src="../../../../images/gb-5afd0a44.png" class="top-nav-icon" alt="Gb" />
+          </a>
+          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><img src="../../../../images/nl-5f381ef4.png" class="top-nav-icon" alt="Nl" />
+          </a>
+        </div>
+        <div class="w-hidden-small w-hidden-tiny top-nav-content-block left">
+          <div class="header-contact-text">We are FPGA engineers located in Enschede, The Netherlands.</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-header">
+      <div class="w-container container">
+        <a href="index.html" class="w-nav-brand logo-container"><img src="../../../../images/Logo-109_new-ok-e0a01a25.png" class="logo" alt="Logo 109 new ok" />
+        </a>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/phone-auricular-outline_grey-93d2e4ef.svg" class="header-contact-icon" alt="Phone auricular outline grey" />
+          <div class="header-contact-title">Call us on:</div>
+          <div class="header-contact-title _2"><a wf-temp-elem="" class="link header-contact-link" href="tel:+31858000380">+31 (0)85 8000 380</a>
+          </div>
+        </div>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/email-envelope-outline_grey-1b7eac57.svg" class="header-contact-icon" alt="Email envelope outline grey" />
+          <div class="w-hidden-small w-hidden-tiny header-contact-title">Questions?</div>
+          <div class="header-contact-title _2"><a class="link header-contact-link" href="mailto:info@qbaylogic.com">Send us an e-mail</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div data-collapse="small" data-animation="default" data-duration="400" data-contain="1" class="w-nav navbar">
+      <div class="w-container nav-container">
+        <nav role="navigation" class="w-nav-menu nav-menu"><a href="/" class="w-nav-link nav-link">Home</a>
+          <div data-delay="400" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>Our services</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/fpga-design.html" class="w-dropdown-link dropdown-link-item">FPGA design</a><a href="/workshops-training.html" class="w-dropdown-link dropdown-link-item">Workshops &amp; Training</a><a href="/clash-support.html" class="w-dropdown-link dropdown-link-item">CλaSH support</a>
+            </nav>
+          </div>
+          <div data-delay="200" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>About us</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/about-clash.html" class="w-dropdown-link dropdown-link-item">About CλaSH</a><a href="/our-team.html" class="w-dropdown-link dropdown-link-item">Our team</a>
+            </nav>
+          </div><a href="/blog.html" class="w-nav-link nav-link">Blog archive</a><a href="/testimonials.html" class="w-nav-link nav-link">CLash&nbsp;Testimonials</a><a href="/contact-us.html" class="w-nav-link nav-link">Contact us</a>
+        </nav>
+        <div class="w-nav-button menu-button">
+          <div class="w-icon-nav-menu"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="w-section section tint">
+  <div class="w-container">
+    <div class="w-row recent-news-row">
+      <div class="w-col w-col-9 overall-content-column-left">
+        <div class="blog-post">
+          <div class="blog-post-header-image-block" style="background: url('../../../../images/code2-67f44af6.jpg'); background-size: 100% 280px "></div>
+          <h1 class="blog-post-title">GHC type checker plugins: adding new type-level operations</h1>
+          <div class="blog-post-date">May 10, 2016</div>
+          <div class="w-richtext">
+            <p>Since version 7.10.2, GHC supports so-called <a href="https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/compiler-plugins.html#typechecker-plugins">type-checker plugins</a> which let us extend GHC's constraint solver, i.e. extend the the range of programs GHC can type check.
+Several plugins have already been released, the ones I know are:</p>
+
+<ul>
+  <li>Adam Gundry's <a href="http://hackage.haskell.org/package/uom-plugin">uom-plugin</a>: for supporting units of measure.</li>
+  <li>Iavor Diatchki's <a href="https://github.com/yav/type-nat-solver">type-nat-solver</a>: which allows you to hook up SMT solvers to solve numeric constraints.</li>
+  <li>My own plugins:
+    <ul>
+      <li><a href="http://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-natnormalise</a>: which solves numeric constraints using a custom normalisation procedure as opposed to Iavor's approach, which uses SMT solvers.</li>
+      <li><a href="http://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-extra</a>: which adds a type-level greatest common denominator (GCD) and (ceiling of) logarithm operator for GHCs type-level <code>Nat</code>ural numbers.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>This post will be about writing our own type-checker plugin: we will build a plugin that (just like <a href="http://hackage.haskell.org/package/ghc-typelits-extra">ghc-typelits-extra</a>) allows GHC to perform GCD on types of kind <a href="http://hackage.haskell.org/package/base-4.8.1.0/docs/GHC-TypeLits.html#t:Nat">Nat</a>.</p>
+
+<h1 id="why-a-type-checker-plugin">Why a type-checker plugin?</h1>
+<p>So the first question that might pop up: why do we even need to write a type-checker plugin to support GCD over <code>Nat</code>? The "problem" is that <code>Nat</code> is <em>not</em> inductively defined like so:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">data</span> <span class="kt">Nat</span> <span class="ow">=</span> <span class="kt">Z</span> <span class="o">|</span> <span class="kt">S</span> <span class="kt">Nat</span>
+</pre></div>
+<p>, however, it is simply defined as an <code>Integer</code> (see <a href="https://downloads.haskell.org/~ghc/7.10.3/docs/html/libraries/ghc-7.10.3/src/TypeRep.html#TyLit">CoreSyn.hs</a>).</p>
+
+<p>For an inductively defined <code>Nat</code>s, it is fairly simple to write a (closed) type family symbolising an (arithmetic) operation, e.g.:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds, TypeFamilies #-}</span>
+<a name="line-2"></a>
+<a name="line-3"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>
+<a name="line-4"></a>
+<a name="line-5"></a><span class="kr">data</span> <span class="kt">Nat</span> <span class="ow">=</span> <span class="kt">Z</span> <span class="o">|</span> <span class="kt">S</span> <span class="kt">Nat</span>
+<a name="line-6"></a>
+<a name="line-7"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Add</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-8"></a>  <span class="kt">Add</span> <span class="kt">Z</span> <span class="n">b</span> <span class="ow">=</span> <span class="n">b</span>
+<a name="line-9"></a>  <span class="kt">Add</span> <span class="p">(</span><span class="kt">S</span> <span class="n">a</span><span class="p">)</span> <span class="n">b</span> <span class="ow">=</span> <span class="kt">S</span> <span class="p">(</span><span class="kt">Add</span> <span class="n">a</span> <span class="n">b</span><span class="p">)</span>
+<a name="line-10"></a>
+<a name="line-11"></a><span class="nf">test</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">S</span> <span class="p">(</span><span class="kt">S</span> <span class="p">(</span><span class="kt">S</span> <span class="p">(</span><span class="kt">S</span> <span class="kt">Z</span><span class="p">))))</span> <span class="ow">-&gt;</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">Add</span> <span class="p">(</span><span class="kt">S</span> <span class="p">(</span><span class="kt">S</span> <span class="kt">Z</span><span class="p">))</span> <span class="p">(</span><span class="kt">S</span> <span class="p">(</span><span class="kt">S</span> <span class="kt">Z</span><span class="p">)))</span>
+<a name="line-12"></a><span class="nf">test</span> <span class="ow">=</span> <span class="n">id</span>
+</pre></div>
+<p>However, an inductively defined <code>Nat</code>s is not what GHC gives us, GHC gives us <code>Integer</code>s.
+Having only <code>Integer</code>s, we might try to start with:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds, TypeFamilies #-}</span>
+<a name="line-2"></a>
+<a name="line-3"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-4"></a>
+<a name="line-5"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Add</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-6"></a>  <span class="kt">Add</span> <span class="mi">0</span> <span class="n">b</span> <span class="ow">=</span> <span class="n">b</span>
+<a name="line-7"></a>  <span class="kt">Add</span> <span class="mi">1</span> <span class="n">b</span> <span class="ow">=</span> <span class="o">???</span>
+</pre></div>
+<p>where we have no real way to define the part indicated by "???".
+Indeed, all the currently defined type-level operations on types of kind <code>Nat</code> as defined in <a href="http://hackage.haskell.org/package/base-4.8.1.0/docs/GHC-TypeLits.html#g:3">GHC.TypeLits</a>, are all implemented by compiler magic.
+Using type-checker plugins, that kind of magic is, however, no longer just reserved for the wizards over at GHC HQ!</p>
+
+<p>As to why GHCs native type-level natural numbers are implemented using <code>Integer</code>, instead of an inductively defined datatype, I can only guess:</p>
+
+<ul>
+  <li>Unary encodings (such as the one seen earlier) are "expensive", in terms of memory, for large numbers.
+I'm sure there must be a way to internally use a more efficient representation for what is, from the user's point of view, a unary encoding.
+To my my knowledge, no efforts have been made to explore this option in GHC.</li>
+  <li>Base-2 encodings, though low-cost in terms of memory, have harder to define arithmetic operations.</li>
+</ul>
+
+<p>With the advent of type-checker plugins, the <code>Integer</code>-representation aspect of <code>Nat</code> has not been a problem any longer for most of <a href="http://clash-lang.org">my projects</a>.</p>
+
+<p><strong>UPDATE:</strong>
+@Bodigrim on <a href="https://www.reddit.com/r/haskell/comments/41wp6d/an_introduction_to_building_ghc_typechecker/cz6vopp">reddit</a> showed that we can just implement GCD with the tools already in <code>GHC.TypeLits</code>:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds            #-}</span>
+<a name="line-2"></a><span class="cm">{-# LANGUAGE TypeFamilies         #-}</span>
+<a name="line-3"></a><span class="cm">{-# LANGUAGE TypeOperators        #-}</span>
+<a name="line-4"></a><span class="cm">{-# LANGUAGE UndecidableInstances #-}</span>
+<a name="line-5"></a>
+<a name="line-6"></a><span class="kr">import</span> <span class="nn">Data.Proxy</span>
+<a name="line-7"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span>
+<a name="line-8"></a>
+<a name="line-9"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">Cmp123</span> <span class="p">(</span><span class="n">o</span> <span class="ow">::</span> <span class="kt">Ordering</span><span class="p">)</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">z</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-10"></a>  <span class="kt">Cmp123</span> <span class="kt">LT</span> <span class="n">x</span> <span class="n">y</span> <span class="n">z</span> <span class="ow">=</span> <span class="n">x</span>
+<a name="line-11"></a>  <span class="kt">Cmp123</span> <span class="kt">EQ</span> <span class="n">x</span> <span class="n">y</span> <span class="n">z</span> <span class="ow">=</span> <span class="n">y</span>
+<a name="line-12"></a>  <span class="kt">Cmp123</span> <span class="kt">GT</span> <span class="n">x</span> <span class="n">y</span> <span class="n">z</span> <span class="ow">=</span> <span class="n">z</span>
+<a name="line-13"></a>
+<a name="line-14"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">GCD</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-15"></a>  <span class="kt">GCD</span> <span class="mi">0</span> <span class="n">x</span> <span class="ow">=</span> <span class="n">x</span>
+<a name="line-16"></a>  <span class="kt">GCD</span> <span class="n">x</span> <span class="mi">0</span> <span class="ow">=</span> <span class="n">x</span>
+<a name="line-17"></a>  <span class="kt">GCD</span> <span class="n">x</span> <span class="n">y</span> <span class="ow">=</span> <span class="kt">Cmp123</span> <span class="p">(</span><span class="kt">CmpNat</span> <span class="n">x</span> <span class="n">y</span><span class="p">)</span> <span class="p">(</span><span class="kt">GCD</span> <span class="n">x</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="p">))</span> <span class="n">x</span> <span class="p">(</span><span class="kt">GCD</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="n">y</span><span class="p">)</span>
+<a name="line-18"></a>
+<a name="line-19"></a><span class="nf">test</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">GCD</span> <span class="mi">372</span> <span class="mi">48</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Proxy</span> <span class="mi">12</span>
+<a name="line-20"></a><span class="nf">test</span> <span class="ow">=</span> <span class="n">id</span>
+</pre></div>
+<p>I guess the lesson learned here is that type-checker plugins should always be a last resort measure.</p>
+
+<h1 id="type-level-gcd">Type-level GCD</h1>
+
+<p>OK, enough about why we need to implement GCD using a type-checker plugin.
+Let's get on with implementing it.
+Before we implement the plugin, we first need to define our GCD operation:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE DataKinds    #-}</span>
+<a name="line-2"></a><span class="cm">{-# LANGUAGE TypeFamilies #-}</span>
+<a name="line-3"></a><span class="kr">module</span> <span class="nn">GHC.TypeLits.GCD</span>
+<a name="line-4"></a>  <span class="p">(</span> <span class="kt">GCD</span> <span class="p">)</span>
+<a name="line-5"></a><span class="kr">where</span>
+<a name="line-6"></a>
+<a name="line-7"></a><span class="kr">import</span> <span class="nn">GHC.TypeLits</span> <span class="p">(</span><span class="kt">Nat</span><span class="p">)</span>
+<a name="line-8"></a>
+<a name="line-9"></a><span class="kr">type</span> <span class="kr">family</span> <span class="kt">GCD</span> <span class="p">(</span><span class="n">x</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="p">(</span><span class="n">y</span> <span class="ow">::</span> <span class="kt">Nat</span><span class="p">)</span> <span class="ow">::</span> <span class="kt">Nat</span> <span class="kr">where</span>
+<a name="line-10"></a>  <span class="kt">GCD</span> <span class="mi">0</span> <span class="n">x</span> <span class="ow">=</span> <span class="n">x</span>
+</pre></div>
+<p>The reason I've chosen a closed type-family (as opposed to an open one) is that I don't want our users to pull any shenanigans such as adding additional bogus equations.
+For GHC 7.10 we need to add at least one equation (see GHC issue <a href="https://ghc.haskell.org/trac/ghc/ticket/9840">#9840</a>) to our closed type family; this should no longer be needed for GHC 8+.
+Although an empty closed type family is possible in GHC 8+, the current single equation version simplifies the design of the type-checker plugin, as we will see at the end of this blog post.</p>
+
+<h1 id="type-checker-plugin">Type-checker plugin</h1>
+
+<p>I guess the reason there are not too many blog posts on GHC type checker plugins is because you need to be sort-of familiar with the GHC API.
+I've been using the GHC API for over 6 years now, so I've taught myself how to browse its documentation (the comments in the source code); however, it's lack of haddock documentation makes it somewhat intimidating for the uninitiated.
+I try to keep the GHC API code to a minimum, but it can sadly not be avoided.</p>
+
+<p>We first start with some imports:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cm">{-# LANGUAGE CPP, TupleSections #-}</span>
+<a name="line-2"></a><span class="kr">module</span> <span class="nn">GHC.TypeLits.GCD.Solver</span>
+<a name="line-3"></a>  <span class="p">(</span> <span class="nf">plugin</span> <span class="p">)</span>
+<a name="line-4"></a><span class="kr">where</span>
+<a name="line-5"></a>
+<a name="line-6"></a><span class="c1">-- external</span>
+<a name="line-7"></a><span class="kr">import</span> <span class="nn">Control.Arrow</span>       <span class="p">((</span><span class="o">***</span><span class="p">))</span>
+<a name="line-8"></a><span class="kr">import</span> <span class="nn">Data.List</span>           <span class="p">(</span><span class="nf">partition</span><span class="p">)</span>
+<a name="line-9"></a><span class="kr">import</span> <span class="nn">Data.Maybe</span>          <span class="p">(</span><span class="nf">mapMaybe</span><span class="p">)</span>
+<a name="line-10"></a><span class="kr">import</span> <span class="nn">GHC.TcPluginM.Extra</span> <span class="p">(</span><span class="nf">evByFiat</span><span class="p">,</span> <span class="nf">lookupModule</span><span class="p">,</span> <span class="nf">lookupName</span><span class="p">)</span>
+<a name="line-11"></a>
+<a name="line-12"></a><span class="c1">-- GHC API</span>
+<a name="line-13"></a><span class="kr">import</span> <span class="nn">FastString</span> <span class="p">(</span><span class="nf">fsLit</span><span class="p">)</span>
+<a name="line-14"></a><span class="kr">import</span> <span class="nn">Module</span>     <span class="p">(</span><span class="nf">mkModuleName</span><span class="p">)</span>
+<a name="line-15"></a><span class="kr">import</span> <span class="nn">OccName</span>    <span class="p">(</span><span class="nf">mkTcOcc</span><span class="p">)</span>
+<a name="line-16"></a><span class="kr">import</span> <span class="nn">Plugins</span>    <span class="p">(</span><span class="kt">Plugin</span> <span class="p">(</span><span class="o">..</span><span class="p">),</span> <span class="nf">defaultPlugin</span><span class="p">)</span>
+<a name="line-17"></a><span class="kr">import</span> <span class="nn">TcEvidence</span> <span class="p">(</span><span class="kt">EvTerm</span><span class="p">)</span>
+<a name="line-18"></a><span class="kr">import</span> <span class="nn">TcPluginM</span>  <span class="p">(</span><span class="kt">TcPluginM</span><span class="p">,</span> <span class="nf">tcLookupTyCon</span><span class="p">)</span>
+<a name="line-19"></a><span class="kr">import</span> <span class="nn">TcRnTypes</span>  <span class="p">(</span><span class="kt">Ct</span><span class="p">,</span> <span class="kt">TcPlugin</span><span class="p">(</span><span class="o">..</span><span class="p">),</span> <span class="kt">TcPluginResult</span> <span class="p">(</span><span class="o">..</span><span class="p">),</span>
+<a name="line-20"></a>                   <span class="nf">ctEvidence</span><span class="p">,</span> <span class="nf">ctEvPred</span><span class="p">)</span>
+<a name="line-21"></a><span class="kr">import</span> <span class="nn">TyCon</span>      <span class="p">(</span><span class="kt">TyCon</span><span class="p">)</span>
+<a name="line-22"></a><span class="kr">import</span> <span class="nn">Type</span>       <span class="p">(</span><span class="kt">EqRel</span> <span class="p">(</span><span class="kt">NomEq</span><span class="p">),</span> <span class="kt">PredTree</span> <span class="p">(</span><span class="kt">EqPred</span><span class="p">),</span>
+<a name="line-23"></a>                   <span class="nf">classifyPredType</span><span class="p">)</span>
+<a name="line-24"></a><span class="o">#</span><span class="kr">if</span> <span class="n">__GLASGOW_HASKELL__</span> <span class="o">&gt;=</span> <span class="mi">711</span>
+<a name="line-25"></a><span class="kr">import</span> <span class="nn">TyCoRep</span>    <span class="p">(</span><span class="kt">Type</span> <span class="p">(</span><span class="o">..</span><span class="p">),</span> <span class="kt">TyLit</span> <span class="p">(</span><span class="o">..</span><span class="p">))</span>
+<a name="line-26"></a><span class="o">#</span><span class="kr">else</span>
+<a name="line-27"></a><span class="kr">import</span> <span class="nn">TypeRep</span>    <span class="p">(</span><span class="kt">Type</span> <span class="p">(</span><span class="o">..</span><span class="p">),</span> <span class="kt">TyLit</span> <span class="p">(</span><span class="o">..</span><span class="p">))</span>
+<a name="line-28"></a><span class="o">#</span><span class="n">endif</span>
+</pre></div>
+<p>Aside from the GHC API, and some Prelude modules, we also import some functions from my <a href="http://hackage.haskell.org/package/ghc-tcplugins-extra">ghc-tcplugins-extra</a> package, <code>GHC.TcPluginM.Extra</code>: it provides some type-checker plugin utility functions with the intention to provide a stable API spanning multiple GHC releases.
+As those of us who use the GHC API often know, the GHC API is fairly <em>unstable</em>, hence my personal need for <a href="http://hackage.haskell.org/package/ghc-tcplugins-extra">ghc-tcplugins-extra</a>.
+Currently, <a href="http://hackage.haskell.org/package/ghc-tcplugins-extra">ghc-tcplugins-extra</a> supports GHC 7.10 and GHC 8.0.</p>
+
+<p>Next up, setting up the plugin:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">plugin</span> <span class="ow">::</span> <span class="kt">Plugin</span>
+<a name="line-2"></a><span class="nf">plugin</span> <span class="ow">=</span> <span class="n">defaultPlugin</span> <span class="p">{</span> <span class="n">tcPlugin</span> <span class="ow">=</span> <span class="n">const</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">gcdPlugin</span><span class="p">)</span> <span class="p">}</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="nf">gcdPlugin</span> <span class="ow">::</span> <span class="kt">TcPlugin</span>
+<a name="line-5"></a><span class="nf">gcdPlugin</span> <span class="ow">=</span>
+<a name="line-6"></a>  <span class="kt">TcPlugin</span> <span class="p">{</span> <span class="n">tcPluginInit</span>  <span class="ow">=</span> <span class="n">lookupGCDTyCon</span>
+<a name="line-7"></a>           <span class="p">,</span> <span class="n">tcPluginSolve</span> <span class="ow">=</span> <span class="n">solveGCD</span>
+<a name="line-8"></a>           <span class="p">,</span> <span class="n">tcPluginStop</span>  <span class="ow">=</span> <span class="n">const</span> <span class="p">(</span><span class="n">return</span> <span class="nb">()</span><span class="p">)</span>
+<a name="line-9"></a>           <span class="p">}</span>
+</pre></div>
+<p>We use <code>defaultPlugin</code> to create a plugin that does nothing at all, and add our own <code>gcdPlugin</code> type-checker plugin.
+Plugin's can be given <a href="https://downloads.haskell.org/~ghc/7.10.1/docs/html/users_guide/flag-reference.html#idp15444912">command line options</a>, but we just ignore them.</p>
+
+<p>The <code>TcPlugin</code> record has three fields:</p>
+
+<ul>
+  <li><code>tcPluginInit</code>: Initialises the state used by our type-checker plugin.
+We will use it to look up the <code>TyCon</code> (type constructor) of the <code>GCD</code> type family.
+One can also perform IO operations in <code>tcPluginInit</code>, and have the state contain <code>IORef</code>s.</li>
+  <li><code>tcPluginSolve</code>: The main solver function, this is were we will actually perform the <em>gcd</em> calculation.</li>
+  <li><code>tcPluginStop</code>: Cleaning up of the state.
+We have no use for it, but it can for example be used to remove files that are used as a communication medium with an SMT solver.</li>
+</ul>
+
+<p>Our type-checker plugin solves equations involving our <code>GCD</code> type family, so we need to know that the types that we are dealing with actually involve <code>GCD</code>.
+To do that, we need GHC's internal representation of <code>GCD</code>, which is a <a href="https://downloads.haskell.org/~ghc/7.10.3/docs/html/libraries/ghc-7.10.3/TyCon.html#t:TyCon">TyCon</a>.
+We do the lookup of our <code>GCD</code> TyCon in the initialisation of our type-checker plugin, so that it becomes our plugin's internal state:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">lookupGCDTyCon</span> <span class="ow">::</span> <span class="kt">TcPluginM</span> <span class="kt">TyCon</span>
+<a name="line-2"></a><span class="nf">lookupGCDTyCon</span> <span class="ow">=</span> <span class="kr">do</span>
+<a name="line-3"></a>    <span class="n">md</span>      <span class="ow">&lt;-</span> <span class="n">lookupModule</span> <span class="n">gcdModule</span> <span class="n">gcdPackage</span>
+<a name="line-4"></a>    <span class="n">gcdTcNm</span> <span class="ow">&lt;-</span> <span class="n">lookupName</span> <span class="n">md</span> <span class="p">(</span><span class="n">mkTcOcc</span> <span class="s">&quot;GCD&quot;</span><span class="p">)</span>
+<a name="line-5"></a>    <span class="n">tcLookupTyCon</span> <span class="n">gcdTcNm</span>
+<a name="line-6"></a>  <span class="kr">where</span>
+<a name="line-7"></a>    <span class="n">gcdModule</span>  <span class="ow">=</span> <span class="n">mkModuleName</span> <span class="s">&quot;GHC.TypeLits.GCD&quot;</span>
+<a name="line-8"></a>    <span class="n">gcdPackage</span> <span class="ow">=</span> <span class="n">fsLit</span> <span class="s">&quot;ghc-typelits-gcd&quot;</span>
+</pre></div>
+<p>The name of our package is going to be "ghc-typelits-gcd", and the module in which we defined <code>GCD</code> is "GHC.TypeLits.GCD".
+In the above code, we first look up the <code>GHC.TypeLits.GCD</code> module in the <code>ghc-typelits-gcd</code> package, we then look up the full <code>Name</code> of the thing we call "GCD", and finally look up the actual <code>GCD</code> TyCon.</p>
+
+<h3 id="actually-solving-something">Actually solving something</h3>
+
+<p>So we've done all the setting up for our type-checker plugin, and are now ready to implement the business end of it.
+But what does a type-checker plugin actually do?
+Well, it solves <a href="https://downloads.haskell.org/~ghc/7.10.3/docs/html/users_guide/constraint-kind.html">Constraint</a>s, the types that in our Haskell code usually appear on the left of the <code>=&gt;</code> arrow.</p>
+
+<p>In our case, we will be solving equality constraints, that is, given the following haskell code:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">f</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">GCD</span> <span class="mi">6</span> <span class="mi">8</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Proxy</span> <span class="mi">2</span>
+<a name="line-2"></a><span class="nf">f</span> <span class="ow">=</span> <span class="n">id</span>
+</pre></div>
+<p>we have to say whether the equality <code>GCD 6 8 ~ 2</code> can be <em>proven</em>.
+So let's start with the type signature of our solver:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">solveGCD</span> <span class="ow">::</span> <span class="kt">TyCon</span> <span class="c1">-- ^ GCD&#39;s TyCon</span>
+<a name="line-2"></a>         <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>  <span class="c1">-- ^ [G]iven constraints</span>
+<a name="line-3"></a>         <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>  <span class="c1">-- ^ [D]erived constraints</span>
+<a name="line-4"></a>         <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>  <span class="c1">-- ^ [W]anted constraints</span>
+<a name="line-5"></a>         <span class="ow">-&gt;</span> <span class="kt">TcPluginM</span> <span class="kt">TcPluginResult</span>
+</pre></div>
+<p>The first argument is the plugin's state, which in our case is just the (immutable) <code>TyCon</code> of our <code>GCD</code> type family.
+Next come three categories of constraints that GHC's solver pipeline is giving to us:</p>
+
+<ul>
+  <li>First are the given constraints, these are the proven facts about types available to the compiler.</li>
+  <li>Second are the derived constraints… to be honest, I never really understood what they do, apparently they help with improving error messages, but I never investigated them in depth.</li>
+  <li>
+    <p>And finally, there are the wanted constraints.
+These are the constraints that the compiler wants us to either:</p>
+
+    <ul>
+      <li>Prove, so that the valid program type checks, or,</li>
+      <li>Disprove, so that it can give a good error message.
+That is, unsolved constraints also result in errors, but constraints that are outright rejected result in better error messages.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>The result of our plugin is:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="kr">data</span> <span class="kt">TcPluginResult</span>
+<a name="line-2"></a>  <span class="ow">=</span> <span class="kt">TcPluginContradiction</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>
+<a name="line-3"></a>  <span class="o">|</span> <span class="kt">TcPluginOk</span> <span class="p">[(</span><span class="kt">EvTerm</span><span class="p">,</span><span class="kt">Ct</span><span class="p">)]</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>
+</pre></div>
+<p>where we can either return <code>TcPluginContradictions cts</code>, where <code>cts</code> are all the wanted constraints that we deemed insolvable (think <code>2 + 3 ~ 4</code> for ordinary natural numbers).
+Or we can return <code>TcPluginOk proven newWanted</code>, where the <code>proven</code> are all the wanted constraints (<code>Ct</code>) that we solved together with with their proofs (<code>EvTerm</code>), and <code>newWanted</code> are all the new wanted constraints that must additionally be solved.</p>
+
+<p>An example of the latter would be: given the constraint <code>x + GCD 6 8 ~ 2 + x</code>, my <a href="http://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-natnormalise</a> plugin knows that addition is commutative, but doesn't know anything about <code>GCD</code>, so it would return: <code>TcPluginOK [("Believe me",x + GCD 6 8 ~ 2 + x)] [GCD 6 8 ~ 2]</code>.
+The new wanted constraint, <code>GCD 6 8 ~ 2</code>, would then be picked up by the plugin that we are currently describing in this blog post.</p>
+
+<p>Next, the body of our <code>solveGCD</code> function:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">solveGCD</span> <span class="kr">_</span>     <span class="kr">_</span> <span class="kr">_</span> <span class="kt">[]</span>      <span class="ow">=</span> <span class="n">return</span> <span class="p">(</span><span class="kt">TcPluginOk</span> <span class="kt">[]</span> <span class="kt">[]</span><span class="p">)</span>
+<a name="line-2"></a><span class="nf">solveGCD</span> <span class="n">gcdTc</span> <span class="kr">_</span> <span class="kr">_</span> <span class="n">wanteds</span> <span class="ow">=</span> <span class="n">return</span> <span class="o">$!</span> <span class="kr">case</span> <span class="n">failed</span> <span class="kr">of</span>
+<a name="line-3"></a>  <span class="kt">[]</span> <span class="ow">-&gt;</span> <span class="kt">TcPluginOk</span> <span class="p">(</span><span class="n">mapMaybe</span> <span class="p">(</span><span class="nf">\</span><span class="n">c</span> <span class="ow">-&gt;</span> <span class="p">(,</span><span class="n">c</span><span class="p">)</span> <span class="o">&lt;$&gt;</span> <span class="n">evMagic</span> <span class="n">c</span><span class="p">)</span> <span class="n">solved</span><span class="p">)</span> <span class="kt">[]</span>
+<a name="line-4"></a>  <span class="n">f</span>  <span class="ow">-&gt;</span> <span class="kt">TcPluginContradiction</span> <span class="n">f</span>
+<a name="line-5"></a>  <span class="kr">where</span>
+<a name="line-6"></a>    <span class="n">gcdWanteds</span> <span class="ow">::</span> <span class="p">[(</span><span class="kt">Ct</span><span class="p">,(</span><span class="kt">Integer</span><span class="p">,</span><span class="kt">Integer</span><span class="p">))]</span>
+<a name="line-7"></a>    <span class="n">gcdWanteds</span> <span class="ow">=</span> <span class="n">mapMaybe</span> <span class="p">(</span><span class="n">toGCDEquality</span> <span class="n">gcdTc</span><span class="p">)</span> <span class="n">wanteds</span>
+<a name="line-8"></a>
+<a name="line-9"></a>    <span class="n">solved</span><span class="p">,</span> <span class="n">failed</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Ct</span><span class="p">]</span>
+<a name="line-10"></a>    <span class="p">(</span><span class="n">solved</span><span class="p">,</span><span class="n">failed</span><span class="p">)</span> <span class="ow">=</span> <span class="p">(</span><span class="n">map</span> <span class="n">fst</span> <span class="o">***</span> <span class="n">map</span> <span class="n">fst</span><span class="p">)</span>
+<a name="line-11"></a>                    <span class="o">$</span> <span class="n">partition</span> <span class="p">(</span><span class="n">uncurry</span> <span class="p">(</span><span class="o">==</span><span class="p">)</span> <span class="o">.</span> <span class="n">snd</span><span class="p">)</span> <span class="n">gcdWanteds</span>
+</pre></div>
+<p>The first clause basically says that, if there are no wanted constraints for us to solve we are done.
+The thing is, our type-checker plugin is used inside two phases of GHC's solver pipeline.
+In the first phase, only given (and probably derived) constraints are passed through the pipeline.
+A type-checker plugin could then extend GHCs knowledge about the constraints by creating more given constraints, which could then help in solving future wanted constraints.
+In the second phase, we'll be constantly given new wanted constraints that pop up during iterations of the solver, until all wanted constraints have passed trough the pipeline at least once.</p>
+
+<p>This brings us to the second clause, which is the clause that handles this phase 2 part.
+It gets all the wanted constraints (involving <code>GCD</code>) for which there is some hope that we actually can solve them; these interesting wanted constraints are <code>gcdWanteds</code>.
+As we will see later on, the solving part basically consists of trying to reduce both sides of the equality relation to a number.
+So given the equality <code>GCD 6 8 ~ 2</code>, we reduce it to <code>2 ~ 2</code>.
+Consequently, all the <code>solved</code> constraints are the constraints where both sides of the equality reduced to the same number, and <code>failed</code> constraints are the constraints where the sides of the equality reduced to a different number.</p>
+
+<p>Finally, when there are no <code>failed</code> constraints, we return all our solved constraints, together with a proof that the constraints hold; we don't return any new wanted constraints.
+The proofs for the solved constraints are constructed by <code>evMagic</code> (which we will discuss later).
+If there are any failed constraints, we return those in a <code>TcPluginContradiction</code>.</p>
+
+<p>Next comes the code by which we find the constraints that are interesting for our plugin:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">toGCDEquality</span> <span class="ow">::</span> <span class="kt">TyCon</span> <span class="ow">-&gt;</span> <span class="kt">Ct</span> <span class="ow">-&gt;</span> <span class="kt">Maybe</span> <span class="p">(</span><span class="kt">Ct</span><span class="p">,(</span><span class="kt">Integer</span><span class="p">,</span><span class="kt">Integer</span><span class="p">))</span>
+<a name="line-2"></a><span class="nf">toGCDEquality</span> <span class="n">gcdTc</span> <span class="n">ct</span> <span class="ow">=</span>
+<a name="line-3"></a>  <span class="kr">case</span> <span class="n">classifyPredType</span> <span class="o">$</span> <span class="n">ctEvPred</span> <span class="o">$</span> <span class="n">ctEvidence</span> <span class="n">ct</span> <span class="kr">of</span>
+<a name="line-4"></a>    <span class="kt">EqPred</span> <span class="kt">NomEq</span> <span class="n">t1</span> <span class="n">t2</span>
+<a name="line-5"></a>      <span class="ow">-&gt;</span> <span class="p">(</span><span class="n">ct</span><span class="p">,)</span> <span class="o">&lt;$&gt;</span> <span class="p">((,)</span> <span class="o">&lt;$&gt;</span> <span class="n">reduceGCD</span> <span class="n">gcdTc</span> <span class="n">t1</span>
+<a name="line-6"></a>                        <span class="o">&lt;*&gt;</span> <span class="n">reduceGCD</span> <span class="n">gcdTc</span> <span class="n">t2</span><span class="p">)</span>
+<a name="line-7"></a>    <span class="kr">_</span> <span class="ow">-&gt;</span> <span class="kt">Nothing</span>
+<a name="line-8"></a>
+<a name="line-9"></a><span class="nf">reduceGCD</span> <span class="ow">::</span> <span class="kt">TyCon</span> <span class="ow">-&gt;</span> <span class="kt">Type</span> <span class="ow">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">Integer</span>
+<a name="line-10"></a><span class="nf">reduceGCD</span> <span class="n">gcdTc</span> <span class="ow">=</span> <span class="n">go</span>
+<a name="line-11"></a>  <span class="kr">where</span>
+<a name="line-12"></a>    <span class="n">go</span> <span class="p">(</span><span class="kt">LitTy</span> <span class="p">(</span><span class="kt">NumTyLit</span> <span class="n">i</span><span class="p">))</span> <span class="ow">=</span> <span class="kt">Just</span> <span class="n">i</span>
+<a name="line-13"></a>    <span class="n">go</span> <span class="p">(</span><span class="kt">TyConApp</span> <span class="n">tc</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">])</span>
+<a name="line-14"></a>      <span class="o">|</span> <span class="n">tc</span> <span class="o">==</span> <span class="n">gcdTc</span> <span class="ow">=</span> <span class="n">gcd</span> <span class="o">&lt;$&gt;</span> <span class="n">go</span> <span class="n">x</span> <span class="o">&lt;*&gt;</span> <span class="n">go</span> <span class="n">y</span>
+<a name="line-15"></a>    <span class="n">go</span> <span class="kr">_</span> <span class="ow">=</span> <span class="kt">Nothing</span>
+</pre></div>
+<p>The <code>toGCDEquality</code> first looks at what type of constraint we are dealing with.
+We are only interested in the equality constraints; other constraints are things like class constraints and implicit parameters.
+If the constraint is an equality constraint (<code>EqPred</code>), we see if we can reduce both sides of the equality to a number using <code>reduceGCD</code>.</p>
+
+<p>Finally, <code>reduceGCD</code> is the function that applies the actual <code>gcd</code> function!
+If <code>reduceGCD</code> finds a type-level natural, it's done.
+If it finds an application of our <code>GCD</code> type family, it first tries to reduce the argument, and subsequently applies the <code>gcd</code> function.
+If it's not a type-level natural, or the application <code>GCD</code> type family, we give up.</p>
+
+<h3 id="burden-of-proof">Burden of proof</h3>
+
+<p>The last part of our plugin is the evidence generation: the actual proof that the wanted equality relation holds.
+This is sadly the part where we take the easy way out (the easy way is often pragmatic :-)).
+We use the <code>evByFiat</code> function from <a href="http://hackage.haskell.org/package/ghc-tcplugins-extra">ghc-tcplugins-extra</a>, which, as its name implies, gives a proof by fiat.
+The <code>evByFiat</code> function basically uses the same "proof", as the one that <code>unsafeCoerce</code> uses internally in GHC.</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">evMagic</span> <span class="ow">::</span> <span class="kt">Ct</span> <span class="ow">-&gt;</span> <span class="kt">Maybe</span> <span class="kt">EvTerm</span>
+<a name="line-2"></a><span class="nf">evMagic</span> <span class="n">ct</span> <span class="ow">=</span> <span class="kr">case</span> <span class="n">classifyPredType</span> <span class="o">$</span> <span class="n">ctEvPred</span> <span class="o">$</span> <span class="n">ctEvidence</span> <span class="n">ct</span> <span class="kr">of</span>
+<a name="line-3"></a>    <span class="kt">EqPred</span> <span class="kt">NomEq</span> <span class="n">t1</span> <span class="n">t2</span> <span class="ow">-&gt;</span> <span class="kt">Just</span> <span class="p">(</span><span class="n">evByFiat</span> <span class="s">&quot;ghc-typelits-gcd&quot;</span> <span class="n">t1</span> <span class="n">t2</span><span class="p">)</span>
+<a name="line-4"></a>    <span class="kr">_</span>                  <span class="ow">-&gt;</span> <span class="kt">Nothing</span>
+</pre></div>
+<p>Perhaps these "proofs" by fiat are OK for the tiny type-checker plugin we have written here, perhaps it is not.
+Looking at the <a href="https://github.com/aristidb/agda/blob/master/lib-0.5/src/Data/Nat/GCD.agda">Agda code for GCD</a> it seems possible to provide a real proof for GCD.
+Then again, Agda's proof uses inductively defined natural numbers, which we didn't have to begin with.</p>
+
+<p>In the end, I use Haskell for actually building programs that run, or actually, building programs that get translated to digital circuits; and not to prove things about programs.
+I'm fairly confident that the plugin we have written does not allow for incorrect programs to be type-checked (I know, assumptions are the mother of all …), so I'm personally OK with these by fiat "proofs".</p>
+
+<h1 id="wrapping-up">Wrapping up</h1>
+
+<p>The complete code for this blog can be found on <a href="https://github.com/christiaanb/ghc-typelits-gcd">https://github.com/christiaanb/ghc-typelits-gcd</a>.
+It contains the following, very minor, <a href="https://github.com/christiaanb/ghc-typelits-gcd/blob/master/test/Spec.hs">test suite</a>:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">test1</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">GCD</span> <span class="mi">6</span> <span class="mi">8</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Proxy</span> <span class="mi">2</span>
+<a name="line-2"></a><span class="nf">test1</span> <span class="ow">=</span> <span class="n">id</span>
+<a name="line-3"></a>
+<a name="line-4"></a><span class="nf">test2</span> <span class="ow">::</span> <span class="kt">Proxy</span> <span class="p">(</span><span class="kt">GCD</span> <span class="mi">0</span> <span class="n">x</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="kt">Proxy</span> <span class="n">x</span>
+<a name="line-5"></a><span class="nf">test2</span> <span class="ow">=</span> <span class="n">id</span>
+</pre></div>
+<p>which, using our type-checker plugin, passes the type-checker, YAY!</p>
+
+<p>When you start writing "real" type-checker plugins, you'll have to think <em>at least</em> about the following aspects:</p>
+
+<ul>
+  <li>How am I going to let given and wanted constraints interact?</li>
+  <li>How do I ensure that I do not keep on generating new wanted constraints every time my plugin gets called?
+Because if you keep on generating new constraints, the GHCs solver will never finish, and compiling just becomes an exercise in watching a blinking cursor for all eternity.</li>
+  <li>How do I interact with other type-checker plugins?
+Remember where I said that: given the constraint <code>x + GCD 6 8 ~ 2 + x</code>, our <a href="http://hackage.haskell.org/package/ghc-typelits-natnormalise">ghc-typelits-natnormalise</a> plugin knows that addition is commutative, but doesn't know anything about <code>GCD</code>, so it would return: <code>TcPluginOK [("Believe me",x + GCD 6 8 ~ 2 + x)] [GCD 6 8 ~ 2]</code>.
+And the the GCD plugin would do the rest.
+That was actually a white lie!
+The evidence it generates is not our simple <code>evByFiat</code> (i.e. "Believe me"), but a <em>conditional</em> evidence.
+We need it to be conditional, because if <code>GCD 6 8 ~ 2</code> turned out not to be true, then <code>x + GCD 6 8 ~ 2 + x</code> isn't true either.
+I used to solve this problem with <a href="http://hackage.haskell.org/package/ghc-tcplugins-extra-0.2/docs/src/GHC-TcPluginM-Extra.html#newWantedWithProvenance">tricks/hacks</a>, but GHC 8+ seems to allow me to do this in <a href="https://github.com/clash-lang/ghc-typelits-natnormalise/blob/v0.4/src/GHC/TypeLits/Normalise.hs#L262">a more sanctioned way</a>.</li>
+</ul>
+
+<p>Remember where I said it was easier to have the single equation definition of the <code>GCD</code> type family as opposed to the zero equation definition.
+Our test case, <code>test2</code>, is the proof of that: our solver, as it is currently defined, is completely unable to handle <code>test2</code>.
+Our current solver only works when both arguments of <code>GCD</code> reduce to a natural number, and gives up otherwise.</p>
+
+<p>Indeed, this blog post was written with the intention of demonstrating a "working" prototype of a type-checker plugin with a "minimal" amount of code, and I think it serves that purpose well.
+Given that there isn't much material on writing type-checker plugins out there, I understand there aren't too many type-checker plugins in the wild.
+I hope this blog post serves as that final push for some of you to start writing your own type-checker plugins and further explore its design space.</p>
+
+          </div>
+          <div class="w-embed">
+              <div class="addthis_sharing_toolbox"></div>
+            </div>
+          </div>
+          <div class="w-clearfix blog-author-block"><img src="../../../../images/christiaan-b33f5da1.jpg" class="blog-author-image" alt="Christiaan" />
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2">Christiaan Baaij</div>
+          </div>
+          <div class="w-embed w-script">
+            <div id='disqus_thread'></div>
+<script type='text/javascript'>
+//<![CDATA[
+                  var disqus_shortname = 'qbaylogic';
+          
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+//]]>
+</script>
+<noscript>Please enable JavaScript to view the <a href='http://disqus.com/?ref_noscript'>comments powered by Disqus.</a></noscript>
+<a href='http://disqus.com' class='dsq-brlink'>comments powered by <span class='logo-disqus'>Disqus</span></a>
+
+          </div>
+        </div>
+        <div class="w-col w-col-3 overall-sidebar-col-right">
+          <div class="widget-block"><a href="fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="clash-support.html" class="link sidebar-list-link">CλaSH support</a>
+          </div>
+          <div class="widget-block">
+            <a href="about-clash.html" class="w-inline-block widget-image-block">
+              <div class="widget-image-block-overlay">
+                <div class="image-block-title">About CλaSH</div>
+                <div class="button">learn more</div>
+              </div>
+            </a>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <div class="w-clearfix content-info-block"><img src="../../../../images/location-pin-42237a1d.svg" class="contact-icon" alt="Location pin" />
+                <div class="contact-block-title">Visit us</div>
+                <p class="contact-info-text">Institutenweg 25A
+                  <br>7521 PH Enschede
+                  <br>The Netherlands</p>
+              </div>
+              <div class="w-clearfix content-info-block"><img src="../../../../images/telephone-handle-silhouette-2f25d8f5.svg" class="contact-icon" alt="Telephone handle silhouette" />
+                <div class="contact-block-title">Call us</div>
+                <p class="contact-info-text">Call us on <a href="tel:+31858000380" class="link">+31&nbsp;(0)85&nbsp;8000&nbsp;380</a>
+                </p>
+              </div>
+              <div class="w-clearfix content-info-block last"><img src="../../../../images/email-filled-closed-envelope-0e8ca69e.svg" class="contact-icon" alt="Email filled closed envelope" />
+                <div class="contact-block-title">Mail us</div>
+                <p class="contact-info-text">Mail us on <a class="link" href="mailto:info@qbaylogic.com">info@qbaylogic.com</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <ul class="w-list-unstyled icon-list">
+                <li class="icon-list-item smaller"><img src="../../../../images/computer-microprocessor-2-a05bac1b.svg" class="list-icon small" alt="Computer microprocessor 2" />
+                  <div class="list-title">FPGA engineers</div>
+                  <p>We apply FPGA technology in domains with difficult mathematical problems, where solutions need low latencies and high performance.</p>
+                </li>
+                <li class="icon-list-item smaller"><img src="../../../../images/mathematic-operations-buttons-c1ed5c5c.svg" class="list-icon small" alt="Mathematic operations buttons" />
+                  <div class="list-title">Creators of CλaSH</div>
+                  <p>We have developed CλaSH, a functional hardware description language, providing unprecedented abstraction mechanisms for FPGA design.</p>
+                </li>
+                <li class="icon-list-item smaller last"><img src="../../../../images/teacher-26918785.svg" class="list-icon small" alt="Teacher" />
+                  <div class="list-title">Experienced educators</div>
+                  <p>Our workshops and training are based on 30+ years of experience in teaching students at bachelor, master, and phd level.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5735ce1812343b0e"></script>
+
+
+  <div class="w-section footer">
+    <div class="footer-overlay">
+      <div class="w-container container">
+        <div class="w-row footer-row">
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">About us</div>
+            <p><strong>QBayLogic B.V.</strong>
+              <br>Institutenweg 25A
+              <br>7521 PH Enschede
+              <br>
+              <br>KvK: 66440483
+              <br>VAT: NL856554558B01</p>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Contact us</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item">
+                <p><strong>Postal address:<br></strong>QBayLogic B.V.
+                  <br>Institutenweg 25A
+                  <br>7521 PH Enschede</p>
+              </li>
+              <li class="footer-list-item"><a href="tel:+31858000380" class="link footer-link">+31 (0)85 8000 380</a>
+              </li>
+              <li class="footer-list-item"><a href="mailto:info@qbaylogic.com" class="link footer-link">info@qbaylogic.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Useful links</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/about-clash.html" class="link footer-link">About CλaSH</a>
+              </li>
+              <li class="footer-list-item"><a href="/our-team.html" class="link footer-link">Our team</a>
+              </li>
+              <li class="footer-list-item"><a href="/services-overview.html" class="link footer-link">Our services</a>
+              </li>
+              <li class="footer-list-item"><a href="/blog.html" class="link footer-link">Blog Archive</a>
+              </li>
+              <li class="footer-list-item"><a href="/contact-us.html" class="link footer-link">Contact us</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Services</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/fpga-design.html" class="link footer-link">FPGA design</a>
+              </li>
+              <li class="footer-list-item"><a href="/workshops-training.html" class="link footer-link">Workshops &amp; Training</a>
+              </li>
+              <li class="footer-list-item"><a href="/clash-support.html" class="link footer-link">CλaSH support</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="../../../../javascripts/webflow-6eade1f3.js"></script>
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-77540661-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
