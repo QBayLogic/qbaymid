@@ -1,0 +1,325 @@
+---
+title: New Clash FPGA Starter
+date: 2020-07-09 12:10 UTC
+tags: cλash haskell fpga
+header_image: fpga_2_400x400_orange.jpg
+author: Christiaan Baaij
+author_image: christiaan.jpg
+---
+
+**This is an updated version of our [old tutorial](<%= post_url("CλaSH FPGA Starter") %>)**
+
+For this tutorial you will need at least [Clash version 1.2.3](https://clash-lang.org/install/).
+In this tutorial we'll be programming the Terasic [DE0-Nano](http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=165&No=593&PartNo=1) FPGA development board using the functional hardware description language [Clash](http://www.clash-lang.org).
+The end result of this tutorial is demonstrated in the video below:
+
+<figure class="w-richtext-align-fullwidth" style="padding-bottom: 56.2061%; width: 100%; max-width: 100%;" data-rt-max-width="" data-rt-max-height="56.206088992974244%" data-page-url="https://youtu.be/XUj9cewMsww" data-rt-type="video" data-rt-dimensions="854:480" data-rt-align="fullwidth">
+<div>
+  <iframe src="https://www.youtube.com/embed/XUj9cewMsww" frameborder="0" scrolling="no" allowfullscreen=""></iframe>
+</div>&nbsp;</figure>
+
+This tutorial is not a general introduction to Clash, nor to programming FPGAs.
+It is meant to demonstrate how to use of [`Synthesize`](https://hackage.haskell.org/package/clash-prelude/docs/Clash-Annotations-TopEntity.html) annotations and [`SynthesisAttributes`](http://hackage.haskell.org/package/clash-prelude/docs/Clash-Annotations-SynthesisAttributes.html) to configure your Clash designs for an FPGA, without writing a single line of VHDL or (System)Verilog.
+
+### Blinker circuit
+
+We start with some general information about the [DE0-Nano](http://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=165&No=593&PartNo=1) board:
+
+* It has a 50 MHz crystal connected to a clock pin of FPGA, which we will connect to one of the [PLL](https://www.altera.com/literature/ug/ug_altpll.pdf)s that is on the FPGA to create a _stable_ 20 MHz clock signal.
+* It has 8 green LEDs that that are *active-high* (turn on at logic level `1`).
+* It has two buttons which are already properly [debounced](http://en.wikipedia.org/wiki/Switch#Contact_bounce) by a Schmitt trigger. The buttons are *active-low*, meaning that their logic level is `0` when they are pressed, and logic level `1` when they are not pressed.
+
+The circuit that we are making will repeatedly do one of two things:
+
+* Invert the state of the LEDs
+* Rotate the state of the LEDs
+
+We switch between these two modes when the `KEY1` button on the board is pressed _and subsequently released_.
+We reset the circuit by pressing the `KEY0` button.
+
+### Clash circuit specification
+
+The complete description of the circuit is given below, where description of the core behavior of the circuit only starts at [line 95](#line-95), and everything that comes before it is there to correctly set up the FPGA.
+
+~~~haskell
+module Blinker where
+
+import Clash.Prelude
+import Clash.Intel.ClockGen
+import Clash.Annotations.SynthesisAttributes
+
+-- Define a synthesis domain with a clock with a period of 20000 /ps/.
+-- i.e. 50 MHz
+createDomain vSystem{vName="Input", vPeriod=20000}
+
+-- Define a synthesis domain with a clock with a period of 50000 /ps/.
+-- i.e. 20 MHz
+createDomain vSystem{vName="Dom20MHz", vPeriod=50000}
+
+{-# ANN topEntity
+  (Synthesize
+    { t_name   = "blinker"
+    , t_inputs = [ PortName "CLOCK_50"
+                 , PortName "KEY0"
+                 , PortName "KEY1"
+                 ]
+    , t_output = PortName "LED"
+    }) #-}
+topEntity ::
+  -- | Incoming clock
+  --
+  -- Annotate with attributes to map the argument to the correct pin,
+  -- with the correct voltage settings, on the DE0-Nano development kit.
+  Clock Input
+    `Annotate` 'StringAttr "chip_pin" "R8"
+    `Annotate` 'StringAttr
+                "altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\"" ->
+  -- | Reset signal, straight from KEY0
+  Signal Input Bool
+    `Annotate` 'StringAttr "chip_pin" "J15"
+    `Annotate` 'StringAttr
+                "altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\"" ->
+  -- | Mode choice, straight from KEY1. See 'LedMode'.
+  Signal Dom20MHz Bit
+    `Annotate` 'StringAttr "chip_pin" "E1"
+    `Annotate` 'StringAttr
+                "altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\"" ->
+  -- | Output containing 8 bits, corresponding to 8 LEDs
+  --
+  -- Use comma-seperated list in the "chip_pin" attribute to maps the
+  -- individual bits of the result to the correct pins on the DE0-Nano
+  -- development kit
+  Signal Dom20MHz (BitVector 8)
+    `Annotate` 'StringAttr
+                "chip_pin" "L3, B1, F3, D1, A11, B13, A13, A15"
+    `Annotate` 'StringAttr
+                "altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\""
+topEntity clk50Mhz rstBtn modeBtn =
+  -- Connect our clock, reset, and enable lines to the corresponding
+  -- /implicit/ arguments of the 'mealy' and 'isRising' function.
+  exposeClockResetEnable
+    (mealy blinkerT initialStateBlinkerT . isRising 1)
+    clk20Mhz
+    rstSync
+    en
+    modeBtn
+  where
+  -- Enable line for subcomponents: we'll keep it always running
+  en = enableGen
+
+  -- Start with the first LED turned on, in rotate mode, with the counter
+  -- on zero
+  initialStateBlinkerT = (1, Rotate, 0)
+
+  -- Signal coming from the reset button is low when pressed, and high when
+  -- not pressed. We convert this signal to the polarity of our domain with
+  -- 'unsafeFromActiveLow'.
+  rst = unsafeFromLowPolarity rstBtn
+
+  -- Instantiate a PLL: this stabilizes the incoming clock signal and
+  -- indicates when the signal is stable. We're also using it to transform
+  -- an incoming clock signal running at 50 MHz to a clock signal running at
+  -- 20 MHz.
+  (clk20Mhz, pllStable) =
+    altpll
+      @Dom20MHz
+      (SSymbol @"altpll20")
+      clk50Mhz
+      rst
+
+  -- Synchronize reset to clock signal coming from PLL. We want the reset to
+  -- remain active while the PLL is NOT stable, hence the conversion with
+  -- 'unsafeFromActiveLow'
+  rstSync =
+    resetSynchronizer
+      clk20Mhz
+      (unsafeFromLowPolarity pllStable)
+      en
+
+data LedMode
+  -- | After some period, rotate active led to the left
+  = Rotate
+  -- | After some period, turn on all disable LEDs, and vice versa
+  | Complement
+  deriving (Generic, NFDataX)
+
+flipMode :: LedMode -> LedMode
+flipMode Rotate = Complement
+flipMode Complement = Rotate
+
+-- Finally, the actual behavior of the circuit
+blinkerT ::
+  (BitVector 8, LedMode, Index 6660001) ->
+  Bool ->
+  ((BitVector 8, LedMode, Index 6660001), BitVector 8)
+blinkerT (leds, mode, cntr) key1R = ((ledsN, modeN, cntrN), leds)
+  where
+    -- clock frequency = 20e6  (20 MHz)
+    -- led update rate = 333e-3 (every 333ms)
+    cnt_max = 6660000 :: Index 6660001 -- 20e6 * 333e-3
+
+    cntrN | cntr == cnt_max = 0
+          | otherwise       = cntr + 1
+
+    modeN | key1R     = flipMode mode
+          | otherwise = mode
+
+    ledsN | cntr == 0 =
+              case mode of
+                Rotate -> rotateL leds 1
+                Complement -> complement leds
+          | otherwise = leds
+~~~
+
+The two things that we wanted to highlight from the "setup" part of the descriptions are:
+
+* the [`Synthesize`](https://hackage.haskell.org/package/clash-prelude/docs/Clash-Annotations-TopEntity.html) ANN pragma, and
+* the [`Annotate`](http://hackage.haskell.org/package/clash-prelude/docs/Clash-Annotations-SynthesisAttributes.html) synthesis attributes.
+
+The `Synthesize` annotation we see on [line 15](#line-15):
+
+~~~haskell
+{-# ANN topEntity
+  (Synthesize
+    { t_name   = "blinker"
+    , t_inputs = [ PortName "CLOCK_50"
+                 , PortName "KEY0"
+                 , PortName "KEY1"
+                 ]
+    , t_output = PortName "LED"
+    }) #-}
+~~~
+
+lets you control the port names of the generated `entity` (VHDL) or `module` (Verilog), and the name of the `entity`/`module` itself.
+It also tells the Clash compiler from which function it should start synthesis.
+So in the above case, the compiler should start from the `topEnity` function, and should call the generated `entity` corresponding to that function: `blinker`.
+Then the ports corresponding to the arguments `clk50MHz`, `rstBtn` and `modeBtn` should be called: `CLOCK_50`, `KEY0` and `KEY1`.
+The output port, corresponding to the result of the function should be named: `LED`.
+
+Next up are the `Annotate` attributes, such as the one on [line 30](#line-30):
+
+~~~haskell
+  Clock Input
+    `Annotate` 'StringAttr "chip_pin" "R8"
+    `Annotate` 'StringAttr
+                "altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\"" ->
+~~~
+
+where we annotate the *type* `Clock Input` with two string attributes:
+
+* `"chip_pin" "R8"`, which informs Quartus to connect the port corresponding to this argument to the FPGA pin called `R8`.
+* `"altera_attribute" "-name IO_STANDARD \"3.3-V LVTTL\""`, which informs Quartus about the voltage characteristics of the pin associated with the port associated with this argument.
+
+All of this allows us to simply import the generated VHDL later on in our quartus project without having to do any further FPGA configuration.
+
+### VHDL generation
+
+Now it's time to generate some VHDL.
+Copy the above description into a file called `Blinker.hs`.
+Then from the command line, run the Clash compiler to generate VHDL:
+
+`clash --vhdl -fclash-hdlsyn Quartus Blinker.hs`
+
+This will create a `./vhdl/Blinker/blinker` directory with all the generated files.
+Note the we passed in the additional flag `-fclash-hdlsyn Quartus`, that is because Quartus is somewhat quirky as to where it expects `attributes` for `entity ports`: in the `architecture`.
+By passing `-fclash-hdlsyn Quartus`, we ensure that Clash generates VHDL that is "compliant" with these quirks.
+
+You can inspect `./vhdl/Blinker/blinker/blinker.hs` and the entity and its ports are named as specified in the `Synthesize` ANN pragma.
+
+~~~vhdl
+entity blinker is
+  port(-- clock
+       CLOCK_50 : in blinker_types.clk_input;
+       KEY0     : in boolean;
+       KEY1     : in std_logic;
+       LED      : out std_logic_vector(7 downto 0));
+end;
+~~~
+
+Further down, we can see that the synthesis attributes have propagated to the generated VHDL:
+
+~~~vhdl
+attribute altera_attribute : string;
+attribute altera_attribute of LED : signal is "-name IO_STANDARD ""3.3-V LVTTL""";
+attribute altera_attribute of KEY1 : signal is "-name IO_STANDARD ""3.3-V LVTTL""";
+attribute altera_attribute of KEY0 : signal is "-name IO_STANDARD ""3.3-V LVTTL""";
+attribute altera_attribute of CLOCK_50 : signal is "-name IO_STANDARD ""3.3-V LVTTL""";
+
+attribute chip_pin : string;
+attribute chip_pin of LED : signal is "L3, B1, F3, D1, A11, B13, A13, A15";
+attribute chip_pin of KEY1 : signal is "E1";
+attribute chip_pin of KEY0 : signal is "J15";
+attribute chip_pin of CLOCK_50 : signal is "R8";
+~~~
+
+### Quartus Project
+
+Next up, we create a Quartus project.
+We could go through the GUI to set things up, but in this case we will simply create the project manually.
+Create the following files, with their given content, and put them in the directory where Clash generated the VHDL: `./vhdl/Blinker/blinker`
+
+* `blinker.sdc`
+
+~~~tcl
+create_clock -name {CLOCK_50} -period 20.000 -waveform { 0.000 10.000 } [get_ports { CLOCK_50 }]
+derive_pll_clocks
+derive_clock_uncertainty
+set_false_path -from * -to [get_ports {LED[*]}]
+set_false_path -from [get_ports {KEY0}] -to *
+set_false_path -from [get_ports {KEY1}] -to *
+~~~
+
+* `blinker.qsf`
+
+~~~tcl
+set_global_assignment -name DEVICE EP4CE22F17C6
+set_global_assignment -name TOP_LEVEL_ENTITY blinker
+set_global_assignment -name VHDL_FILE blinker_types.vhdl
+set_global_assignment -name VHDL_FILE blinker.vhdl
+set_global_assignment -name QSYS_FILE altpllE588ED61A4853C9C.qsys
+set_global_assignment -name SDC_FILE blinker.sdc
+~~~
+
+* `blinker.qpf`
+
+~~~
+PROJECT_REVISION = "blinker"
+~~~
+
+You should now have a directory with the following files:
+
+* `altpllE588ED61A4853C9C.qsys`
+* `blinker.qpf`
+* `blinker.qsf`
+* `blinker.sdc`
+* `blinker.vhdl`
+* `blinker_types.vhdl`
+
+### FPGA Bitstream creation
+
+Now start [Quartus Prime](https://fpgasoftware.intel.com/?edition=lite); once started, in the menu bar, click `File -> Open Project` and open `blinker.qpf`.
+In the menu bar, click: `Processing -> Start Compilation`.
+This can take up to a minute depending on your machine.
+If everything worked as it was supposed to the last messages in the logs should be in the spirit of:
+
+~~~
+Info (332101): Design is fully constrained for setup requirements
+Info (332101): Design is fully constrained for hold requirements
+Info: Quartus Prime Timing Analyzer was successful. 0 errors, 1 warning
+	Info: Peak virtual memory: 892 megabytes
+	Info: Processing ended: Thu Jul  9 23:52:25 2020
+	Info: Elapsed time: 00:00:01
+	Info: Total CPU time (on all processors): 00:00:01
+Info (293000): Quartus Prime Full Compilation was successful. 0 errors, 9 warnings
+~~~
+
+### Programming the FPGA
+
+After synthesis has finished, it is time to program our FPGA board.
+Connect the FPGA board to a USB port, and start the programmer from the menu bar: `Tools -> Programmer`.
+Press the `Start` button on the left to program your FPGA and wait until the progress bar says `100% (Successful)`.
+
+![Programmer](quartus2-programmer-blinker.jpg)
+
+Your FPGA should now be fully configured with the Clash generated design for you to play with.
+So yeah, go press those buttons!
