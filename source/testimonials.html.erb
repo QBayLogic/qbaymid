@@ -3,6 +3,36 @@ title: Testimonials
 ---
   <div class="w-section page-header dark">
     <div class="w-container container page-header-container">
+      <h1 class="page-header-title">Projects</h1>
+      <h2 class="page-header-title subtitle">How we helped our clients</h2>
+    </div>
+  </div>
+  <div class="w-section section tint">
+    <div class="w-container">
+      <div class="section-title-block">
+        <h1 class="section-title">Focal use-case: Laser-based communication</h1>
+        <div class="section-title-line"></div>
+      </div>
+      <p class="large-paragraph allignl">An important ongoing project where we, as a first step, developed a high performance accelerator on FPGA is the TOmCAT project (Terabit Optical Communication Adaptive Terminal), a project initiated by ESA (European Space Agency) and TNO (Netherlands Organisation for Applied Scientific Research), and in which also, among others, Airbus (France) and Demcon-Focal (Enschede, The Netherlands) participate.</p>
+      <h3 class="section-title subtitle">The challenge</h1>
+      <p class="allignl">The project intends to solve the nowadays enormous bandwidth need in communication, in particular with satellites. The volume that current communication technology can handle is limited, and solutions are sought in optical communication, notably by means of laser beams. One of the problems with optical communication are atmospheric influences which disturb the laser beams. Hence the system has to anticipate these influences and adapt the beam to compensate for them. It is obvious that the computational power and the speed by which this computation has to proceed is enormous.</p>
+      <h3 class="section-title subtitle">Our approach</h1>
+      <p class="allignl">Because of QBayLogic’s powerful model-based methodology to design FPGA architectures, Demcon-Focal invited us to support them in the design of the necessary accelerator. The task consisted of detailed operations on the image matrix that is streamed from the camera, and for which the timing requirements are severe.</p>
+      <p class="allignl">Taking this model as a starting point, the development of the architecture on the FPGA proceeded by step-by-step transformations, starting from the high-level model. All intermediate steps are formulated in the same language as the original model, and at every step the new specification can be simulated, just as the original model could be simulated. That means that the correctness of all intermediate steps can be checked by comparing the results with the outcome of the golden reference, and errors were detected in an early stage.</p>
+      <h3 class="section-title subtitle">Our solution</h1>
+      <p class="allignl">In fact, our design process is a non-stop process of writing code and testing it in an interactive design loop, and also in this project that proved to be a very effective process leading to a highly pipelined design. Because of the nature of this design process and the possibility to check the correctness at every intermediate step, the meetings with engineers of Demcon-Focal were very efficient and pleasant.</p>
+      <p>The final step is to translate the resulting design in our high-level language into a traditional hardware language, such as VHDL. That step is automatically performed by our dedicated compiler. The result was delivered to Demcon-Focal and fluently integrated with the rest of the system.</p>
+      <p>For further information the TOmCAT project, see: <a class="link" href="https://artes.esa.int/projects/tomcat">https://artes.esa.int/projects/tomcat</a></p>
+      <div class="w-col w-col-6 service-block-column">
+        <a href="/contact-us.html" class="w-inline-block service-link-block"><img src="images/new-email-interface-symbol-of-black-closed-envelope_white.svg" class="service-block-icon">
+          <div class="service-block-title">Get in touch with us</div>
+          <p class="service-block-paragraph">Let us take one of your FPGA challenges off your shoulders.</p>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="w-section page-header dark">
+    <div class="w-container container page-header-container">
       <h1 class="page-header-title">Clash testimonials</h1>
       <h2 class="page-header-title subtitle">What users are saying about Clash</h2>
     </div>
@@ -18,7 +48,6 @@ title: Testimonials
             </div>
             <div class="testimonial-client-block">
               <div class="client-testimonial-name">Joe Hermaszewski</div>
-              <div class="client-testimonial-name subtitle">Myrtle Software</div>
             </div>
           </div>
         </li>
@@ -43,17 +72,6 @@ title: Testimonials
             <div class="testimonial-client-block">
               <div class="client-testimonial-name">Bogdan Penkovskyi</div>
               <div class="client-testimonial-name subtitle">PhD student at the University of Franche-Comté</div>
-            </div>
-          </div>
-        </li>
-        <li class="testimonial-item">
-          <div class="testimonial-wrapper">
-            <div class="testimonial-text-block">
-              <p class="client-testimonial">“Clash will be to hardware design what Arduino and Raspberry Pi have been to automation.”</p>
-              <div class="client-block-square"></div>
-            </div>
-            <div class="testimonial-client-block">
-              <div class="client-testimonial-name">Raphael 'kena' Poss</div>
             </div>
           </div>
         </li>
