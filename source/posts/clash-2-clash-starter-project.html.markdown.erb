@@ -1,0 +1,47 @@
+---
+title: "Starter project: get started with Clash in minutes!"
+date: 2020-11-30 11:00 UTC
+tags: clash haskell fpga
+header_image: code2.jpg
+author: Martijn Bastiaan
+author_image: martijn.jpg
+---
+
+We just released a new and convenient way to get started with Clash: a
+starter project based on Stack. To get started,
+[install Stack](https://www.fpcomplete.com/haskell/get-started/). Next, open a
+terminal and type:
+
+```
+stack new my-clash-project clash-lang/simple
+```
+
+Your project will be instantiated in `my-clash-project/` and is ready to be
+built. To do so, type:
+
+```
+stack build
+```
+
+To run the tests in the project, run:
+
+```
+stack test
+```
+
+To compile to VHDL, run:
+
+```
+stack run clash -- Test.Example --vhdl
+```
+
+And that's all there is to it! The directory includes a `README.md` giving you
+an overview of the project and how to extend it. Alternatively, you can
+[read it online too](https://github.com/clash-lang/clash-starters/tree/main/simple).
+Happy Clashing!
+
+**Note**: Due to [an upstream bug](https://gitlab.haskell.org/ghc/ghc/-/issues/18550),
+these instructions are currently broken on Windows Build 2004. This is expected
+to be fixed with the release of GHC 8.10.3. We will update the starter project
+and remove this message as soon as that happens. In the meantime, consider using
+WSL2 to run Clash.
