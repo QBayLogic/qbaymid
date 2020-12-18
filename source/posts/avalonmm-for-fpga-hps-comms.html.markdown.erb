@@ -1,0 +1,151 @@
+---
+title: Using Avalon-MM for FPGA-HPS communication
+date: 2020-12-18 13:39 UTC
+tags: Clash haskell fpga hps
+header_image: fpga_2_400x400_orange.jpg
+author: Peter Lebbing
+author_image: peter.jpg
+---
+
+On our public Slack channel at [functionalprogramming.slack.com #clash](https://functionalprogramming.slack.com/) we got the following question a while ago:
+
+> Do you happen to know of any tutorials that show some IP working with the avalon MM bridge on a DE10 nano (from the HPS side)? Currently the clash part is making sense but figuring out how to call even the most basic IP (something that adds two numbers) is eluding me.
+
+As it happens, I had been working on a project to exchange data packets between the FPGA (in Clash) and the HPS on a Terasic DE10-Standard. This board has an Intel Cyclone V SoC, and I also used Avalon-MM interfaces for the communication. The question did not specify which (if any) operating system the HPS would be running; I implemented support for Linux. My project is still lacking part of its documentation, but I decided to release it early in order to write this blog post.
+
+The project can be found on GitHub at [github.com/DigitalBrains1/packet-fifo](https://github.com/DigitalBrains1/packet-fifo). That is the main `packet-fifo` project; you also need a small accompanying Linux kernel driver: [github.com/DigitalBrains1/altera-fifo-kmod](https://github.com/DigitalBrains1/altera-fifo-kmod).
+
+The `packet-fifo` project communicates between FPGA and HPS through a few standard components that are shipped with Intel Platform Designer (QSys). For the Quartus project, I started with the DE10-Standard Golden Hardware Reference Design, and instantiated the following components between HPS and FPGA:
+
+<img src="/images/packet-fifo-components.svg" style="display: block; margin-left: auto; margin-right: auto; background-color: white">
+
+The links from `M` to `S` are Avalon-MM links (master to slave), and the arrows from `SRC` to `SNK` are Avalon-ST interfaces, source to sink. The FPGA design is connected by an Avalon Conduit Interface, and sees groups of pins.
+
+More detail can be obtained by opening the project in Quartus and looking around.
+
+With this Golden Hardware Reference Design, the Clash design is not the top entity of the Quartus project. Instead, it is instantiated from a hand-edited Verilog file that ties the components together. The Clash top entity is connected to some LEDs and buttons and the Avalon Conduit Interfaces of the bus bridges (dubbed `fifo_f2h_in` and `fifo_f2h_out`). The type of the Clash top entity thus becomes:
+
+~~~haskell
+packet_fifo
+    :: Clock System
+    -> "rst_n" ::: Signal System Bool
+    -- ^ Active-low asynchronous reset
+    -> "fpga_debounced_buttons" ::: Signal System (BitVector 3)
+    -> "fifo_f2h_in" :::
+           ( Signal System (Unsigned 32)
+           -- ^ fifo_f2h_in_mm_external_interface_read_data
+           , Signal System Bool
+           -- ^ fifo_f2h_in_mm_external_interface_acknowledge
+           )
+    -> "fifo_f2h_out" :::
+           ( Signal System (Unsigned 32)
+           -- ^ fifo_h2f_out_mm_external_interface_read_data
+           , Signal System Bool
+           -- ^ fifo_h2f_out_mm_external_interface_acknowledge
+           )
+    -> ( "fpga_led_internal" ::: Signal System (Unsigned 10)
+       , "fifo_f2h_in" :::
+             ( Signal System (Unsigned 3)
+             -- ^ fifo_f2h_in_mm_external_interface_address
+             , Signal System (Unsigned 32)
+             -- ^ fifo_f2h_in_mm_external_interface_write_data
+             , Signal System Bool
+             -- ^ fifo_f2h_in_mm_external_interface_read
+             , Signal System Bool
+             -- ^ fifo_f2h_in_mm_external_interface_write
+             , Signal System (BitVector 4)
+             -- ^ fifo_f2h_in_mm_external_interface_byte_enable
+             )
+       , "fifo_f2h_out" :::
+             ( Signal System (Unsigned 6)
+             -- ^ fifo_h2f_out_mm_external_interface_address
+             , Signal System (Unsigned 32)
+             -- ^ fifo_h2f_out_mm_external_interface_write_data
+             , Signal System Bool
+             -- ^ fifo_h2f_out_mm_external_interface_read
+             , Signal System Bool
+             -- ^ fifo_h2f_out_mm_external_interface_write
+             , Signal System (BitVector 4)
+             -- ^ fifo_h2f_out_mm_external_interface_byte_enable
+             )
+       )
+~~~
+
+But the question is specifically about the HPS-side of the communication, so that is what I will go into in this blog post.
+
+The first version of the code where I had the communication basically working is commit [c86ad02](https://github.com/DigitalBrains1/packet-fifo/tree/c86ad0221a586a8d504f18b4ce22ea01500e02c9). The directory [`/src/hps`](https://github.com/DigitalBrains1/packet-fifo/tree/c86ad0221a586a8d504f18b4ce22ea01500e02c9/src/hps) contains the Linux userspace code. I got to this version of the code by basically following chapter 7 of the [DE10-Standard User Manual (from terasic.com.tw)](https://www.terasic.com.tw/cgi-bin/page/archive_download.pl?Language=English&No=1081&FID=551f9fbfa8ed07843cd51831db1b04dd) titled *Examples for using both HPS SoC and FGPA*. This version of the code needs to be compiled with the Intel SoC FPGA Embedded Development Suite (SoC EDS).
+
+As the user manual describes, you first need to generate `hps_0.h` from your Quartus project. The GHRD (in `/quartus` in my project) contains the script `generate_hps_qsys_header.sh`. This needs to be invoked from within an Intel FPGA SoC Embedded Command Shell, so it might look like this:
+
+~~~text
+$ ~/intelFPGA/18.1/embedded/embedded_command_shell.sh
+------------------------------------------------
+Intel FPGA Embedded Command Shell
+
+Version 18.1 [Build 625]
+------------------------------------------------
+$ cd packet-fifo/quartus/
+$ ./generate_hps_qsys_header.sh
+swinfo2header: Creating macro file 'hps_0.h' for module 'hps_0'
+~~~
+
+This `hps_0.h` is already included in `/src/hps` in my project, but that is how it was generated, and that is what needs to be invoked again after the platform is changed in QSys.
+
+Now writing to the Avalon-MM bridge is as simple as `mmap()`ing `/dev/mem` and writing to the proper address constructed from constants in the headers. If you simply had instantiated an *Avalon to External Bus Bridge*, your Clash design would be the addressed slave. The `packet-fifo` project has the Clash design as a master to its own Avalon-MM slaves, and it also contains a *System ID Peripheral*. The following code would map the whole Lightweight HPS-to-FPGA AXI bridge in the process's virtual memory, then read and print the System ID and put the value 42 into the FIFO data buffer:
+
+~~~c
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include "hwlib.h"
+#include "socal/socal.h"
+#include "socal/hps.h"
+#include "socal/alt_gpio.h"
+#include "hps_0.h"
+
+#define HW_REGS_BASE ( ALT_STM_OFST )
+#define HW_REGS_SPAN ( 0x04000000 )
+#define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
+
+int
+main()
+{
+    int fd;
+    char *virtual_base;
+    volatile uint32_t *h2p_sysid_addr, *fifo_h2f_base;
+    uint32_t id;
+
+    fd = open("/dev/mem", (O_RDWR | O_SYNC));
+    virtual_base = mmap(NULL, HW_REGS_SPAN, (PROT_READ | PROT_WRITE),
+            MAP_SHARED, fd, HW_REGS_BASE);
+    h2p_sysid_addr = (uint32_t *) (virtual_base +
+        ((ALT_LWFPGASLVS_OFST + SYSID_QSYS_BASE) & HW_REGS_MASK));
+    fifo_h2f_base = (uint32_t *) (virtual_base +
+        ((ALT_LWFPGASLVS_OFST + FIFO_H2F_IN_BASE) & HW_REGS_MASK));
+
+    id = *h2p_sysid_addr;
+    printf("%#010x\n", id);
+    *fifo_h2f_base = 42;
+
+    return 0;
+}
+~~~
+
+This is fine for some simple programmed I/O. But as soon as you add more functionality than that, such as interrupts, it seems you necessarily end up in kernel space if you are running Linux. However, Linux does offer you the tools to do just the minimum necessary in kernel space, and do the rest in user space. This is accomplished with the [*Userspace I/O*](https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html) subsystem. Furthermore, by switching to using a *Device Tree*, we can almost dispense with the SoC EDS and use a regular compilation environment and cross-platform standards. The latest version of `packet-fifo`, as in the [`master`](https://github.com/DigitalBrains1/packet-fifo/tree/master) branch, does exactly that. See the [README](https://github.com/DigitalBrains1/packet-fifo/blob/master/README) for working with that code. Using Quartus and the SoC EDS, one can generate a Device Tree overlay that contains entries that look like this:
+
+~~~c
+fifo_h2f_in: fifo@0x000000020 {
+        compatible = "altr,fifo-18.1", "altr,fifo-1.0";
+        reg = <0x00000000 0x00000020 0x00000008>,
+                <0x00000000 0x00000000 0x00000020>;
+        reg-names = "in", "in_csr";
+        interrupts = <0 44 4>;
+}; //end fifo@0x000000020 (fifo_h2f_in)
+~~~
+
+The `compatible` property matches devices to their Linux kernel drivers, and the tiny kernel driver used by `packet-fifo` matches on the `"altr,fifo-1.0"` programming model and binds to this device.
+
+The numbers denote addresses and interrupt lines as seen by the direct parent of such a device, and do not correspond to the view from the CPU. But Linux takes care of the mapping for us, and the tiny kernel driver enables exposing them to user space through a device file. This file can be `mmap()`ed to access the Avalon-MM bus, and `select()` or a blocking `read()` is used to wait for an interrupt. All the details of handling the interrupt are done by the kernel, by the device drivers for the SoC platform. The interrupt could even be shared with another device if interrupt lines become a scarce resource.
+
+With this information, it should be possible to start with exchanging words of data from the HPS-side of an Avalon-MM interface. By browsing through the `packet-fifo` project, you can also view an example of the other pieces that are needed to interface the FPGA and the HPS, albeit all still at a pretty basic level. Note that there are still some bits of documentation missing, though.
