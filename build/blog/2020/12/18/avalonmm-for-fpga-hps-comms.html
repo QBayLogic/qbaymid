@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Using Avalon-MM for FPGA-HPS communication</title>
+  <meta property="og:title" content="QBayLogic">
+  <meta property="og:description" content="QBayLogic is a spin-off company of the University of Twente, Enschede, The Netherlands. We apply FPGA technology in domains with difficult mathematical problems.">
+  <meta name="twitter:card" content="summary">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../../../../stylesheets/site-bff400c6.css" rel="stylesheet" />
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js"></script>
+  <script>
+    WebFont.load({
+      google: {
+        families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic","Montserrat:400,700","Cardo:regular,italic,700","Reenie Beanie:regular"]
+      }
+    });
+  </script>
+  <script src="../../../../javascripts/modernizr-05933cc1.js"></script>
+  <link rel="shortcut icon" type="image/x-icon" href="../../../../images/logo_ico_small-ba7e953f.png">
+  <link rel="apple-touch-icon" href="../../../../images/Logo-389f0112.png">
+</head>
+<body>
+  <div class="w-section header-wrapper">
+    <div class="top-header">
+      <div class="w-container container">
+        <div class="top-nav-content-block social">
+          <a href="http://www.facebook.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/facebook_white-61c83ff3.svg" class="top-social-icon" alt="" />
+          </a>
+          <a href="http://www.twitter.com/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/twitter_white-2b2bd36d.svg" class="top-social-icon" alt="" />
+          </a>
+          <a href="http://www.linkedin.com/company/qbaylogic" target="_blank" class="w-inline-block top-social-block"><img src="../../../../images/linkedin-logo_white-c0d672b6.svg" class="top-social-icon" alt="" />
+          </a>
+        </div>
+        <div class="top-nav-content-block">
+          <a href="http://qbaylogic.com" class="w-inline-block w-clearfix"><img src="../../../../images/gb-5afd0a44.png" class="top-nav-icon" alt="" />
+          </a>
+          <a href="http://qbaylogic.nl" class="w-inline-block w-clearfix"><img src="../../../../images/nl-5f381ef4.png" class="top-nav-icon" alt="" />
+          </a>
+        </div>
+        <div class="w-hidden-small w-hidden-tiny top-nav-content-block left">
+          <div class="header-contact-text">We are an FPGA design house located in Enschede, The Netherlands.</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-header">
+      <div class="w-container container">
+        <a href="/index.html" class="w-nav-brand logo-container"><img src="../../../../images/Logo-109_new-ok-e0a01a25.png" class="logo" alt="" />
+        </a>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/phone-auricular-outline_grey-93d2e4ef.svg" class="header-contact-icon" alt="" />
+          <div class="header-contact-title">Call us on:</div>
+          <div class="header-contact-title _2"><a wf-temp-elem="" class="link header-contact-link" href="tel:+31858000380">+31 (0)85 8000 380</a>
+          </div>
+        </div>
+        <div class="w-clearfix w-hidden-small w-hidden-tiny header-contact-block"><img src="../../../../images/email-envelope-outline_grey-1b7eac57.svg" class="header-contact-icon" alt="" />
+          <div class="w-hidden-small w-hidden-tiny header-contact-title">Questions?</div>
+          <div class="header-contact-title _2"><a class="link header-contact-link" href="mailto:info@qbaylogic.com">Send us an e-mail</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div data-collapse="small" data-animation="default" data-duration="400" data-contain="1" class="w-nav navbar">
+      <div class="w-container nav-container">
+        <nav role="navigation" class="w-nav-menu nav-menu"><a href="/" class="w-nav-link nav-link">Home</a>
+          <div data-delay="400" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>Our services</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/fpga-design.html" class="w-dropdown-link dropdown-link-item">FPGA design</a><a href="/workshops-training.html" class="w-dropdown-link dropdown-link-item">Workshops &amp; Training</a><a href="/clash-support.html" class="w-dropdown-link dropdown-link-item">Clash support</a>
+            </nav>
+          </div>
+          <div data-delay="200" class="w-dropdown dropdown-link">
+            <div class="w-dropdown-toggle nav-link dropdown">
+              <div>About us</div>
+              <div class="w-icon-dropdown-toggle dropdown-icon"></div>
+            </div>
+            <nav data-ix="dropdown-list" class="w-dropdown-list dropdown-list"><a href="/about-clash.html" class="w-dropdown-link dropdown-link-item">About Clash</a><a href="/our-team.html" class="w-dropdown-link dropdown-link-item">Our team</a>
+            </nav>
+          </div><a href="/blog.html" class="w-nav-link nav-link">Blog archive</a><a href="/testimonials.html" class="w-nav-link nav-link">Projects &amp; Testimonials</a><a href="/contact-us.html" class="w-nav-link nav-link">Contact us</a>
+        </nav>
+        <div class="w-nav-button menu-button">
+          <div class="w-icon-nav-menu"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="w-section section tint">
+  <div class="w-container">
+    <div class="w-row recent-news-row">
+      <div class="w-col w-col-9 overall-content-column-left">
+        <div class="blog-post">
+          <div class="blog-post-header-image-block" style="background: url('../../../../images/fpga_2_400x400_orange-6fac7130.jpg'); background-size: 100% 280px "></div>
+          <h1 class="blog-post-title">Using Avalon-MM for FPGA-HPS communication</h1>
+          <div class="blog-post-date">Dec 18, 2020</div>
+          <div class="w-richtext">
+            <p>On our public Slack channel at <a href="https://functionalprogramming.slack.com/">functionalprogramming.slack.com #clash</a> we got the following question a while ago:</p>
+
+<blockquote>
+  <p>Do you happen to know of any tutorials that show some IP working with the avalon MM bridge on a DE10 nano (from the HPS side)? Currently the clash part is making sense but figuring out how to call even the most basic IP (something that adds two numbers) is eluding me.</p>
+</blockquote>
+
+<p>As it happens, I had been working on a project to exchange data packets between the FPGA (in Clash) and the HPS on a Terasic DE10-Standard. This board has an Intel Cyclone V SoC, and I also used Avalon-MM interfaces for the communication. The question did not specify which (if any) operating system the HPS would be running; I implemented support for Linux. My project is still lacking part of its documentation, but I decided to release it early in order to write this blog post.</p>
+
+<p>The project can be found on GitHub at <a href="https://github.com/DigitalBrains1/packet-fifo">github.com/DigitalBrains1/packet-fifo</a>. That is the main <code>packet-fifo</code> project; you also need a small accompanying Linux kernel driver: <a href="https://github.com/DigitalBrains1/altera-fifo-kmod">github.com/DigitalBrains1/altera-fifo-kmod</a>.</p>
+
+<p>The <code>packet-fifo</code> project communicates between FPGA and HPS through a few standard components that are shipped with Intel Platform Designer (QSys). For the Quartus project, I started with the DE10-Standard Golden Hardware Reference Design, and instantiated the following components between HPS and FPGA:</p>
+
+<p><img src="../../../../images/packet-fifo-components-8d0a59a7.svg" style="display: block; margin-left: auto; margin-right: auto; background-color: white" /></p>
+
+<p>The links from <code>M</code> to <code>S</code> are Avalon-MM links (master to slave), and the arrows from <code>SRC</code> to <code>SNK</code> are Avalon-ST interfaces, source to sink. The FPGA design is connected by an Avalon Conduit Interface, and sees groups of pins.</p>
+
+<p>More detail can be obtained by opening the project in Quartus and looking around.</p>
+
+<p>With this Golden Hardware Reference Design, the Clash design is not the top entity of the Quartus project. Instead, it is instantiated from a hand-edited Verilog file that ties the components together. The Clash top entity is connected to some LEDs and buttons and the Avalon Conduit Interfaces of the bus bridges (dubbed <code>fifo_f2h_in</code> and <code>fifo_f2h_out</code>). The type of the Clash top entity thus becomes:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nf">packet_fifo</span>
+<a name="line-2"></a>    <span class="ow">::</span> <span class="kt">Clock</span> <span class="kt">System</span>
+<a name="line-3"></a>    <span class="ow">-&gt;</span> <span class="s">&quot;rst_n&quot;</span> <span class="kt">:::</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-4"></a>    <span class="c1">-- ^ Active-low asynchronous reset</span>
+<a name="line-5"></a>    <span class="ow">-&gt;</span> <span class="s">&quot;fpga_debounced_buttons&quot;</span> <span class="kt">:::</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">BitVector</span> <span class="mi">3</span><span class="p">)</span>
+<a name="line-6"></a>    <span class="ow">-&gt;</span> <span class="s">&quot;fifo_f2h_in&quot;</span> <span class="kt">:::</span>
+<a name="line-7"></a>           <span class="p">(</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">32</span><span class="p">)</span>
+<a name="line-8"></a>           <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_read_data</span>
+<a name="line-9"></a>           <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-10"></a>           <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_acknowledge</span>
+<a name="line-11"></a>           <span class="p">)</span>
+<a name="line-12"></a>    <span class="ow">-&gt;</span> <span class="s">&quot;fifo_f2h_out&quot;</span> <span class="kt">:::</span>
+<a name="line-13"></a>           <span class="p">(</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">32</span><span class="p">)</span>
+<a name="line-14"></a>           <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_read_data</span>
+<a name="line-15"></a>           <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-16"></a>           <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_acknowledge</span>
+<a name="line-17"></a>           <span class="p">)</span>
+<a name="line-18"></a>    <span class="ow">-&gt;</span> <span class="p">(</span> <span class="s">&quot;fpga_led_internal&quot;</span> <span class="kt">:::</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">10</span><span class="p">)</span>
+<a name="line-19"></a>       <span class="p">,</span> <span class="s">&quot;fifo_f2h_in&quot;</span> <span class="kt">:::</span>
+<a name="line-20"></a>             <span class="p">(</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">3</span><span class="p">)</span>
+<a name="line-21"></a>             <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_address</span>
+<a name="line-22"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">32</span><span class="p">)</span>
+<a name="line-23"></a>             <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_write_data</span>
+<a name="line-24"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-25"></a>             <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_read</span>
+<a name="line-26"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-27"></a>             <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_write</span>
+<a name="line-28"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">BitVector</span> <span class="mi">4</span><span class="p">)</span>
+<a name="line-29"></a>             <span class="c1">-- ^ fifo_f2h_in_mm_external_interface_byte_enable</span>
+<a name="line-30"></a>             <span class="p">)</span>
+<a name="line-31"></a>       <span class="p">,</span> <span class="s">&quot;fifo_f2h_out&quot;</span> <span class="kt">:::</span>
+<a name="line-32"></a>             <span class="p">(</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">6</span><span class="p">)</span>
+<a name="line-33"></a>             <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_address</span>
+<a name="line-34"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">Unsigned</span> <span class="mi">32</span><span class="p">)</span>
+<a name="line-35"></a>             <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_write_data</span>
+<a name="line-36"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-37"></a>             <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_read</span>
+<a name="line-38"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="kt">Bool</span>
+<a name="line-39"></a>             <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_write</span>
+<a name="line-40"></a>             <span class="p">,</span> <span class="kt">Signal</span> <span class="kt">System</span> <span class="p">(</span><span class="kt">BitVector</span> <span class="mi">4</span><span class="p">)</span>
+<a name="line-41"></a>             <span class="c1">-- ^ fifo_h2f_out_mm_external_interface_byte_enable</span>
+<a name="line-42"></a>             <span class="p">)</span>
+<a name="line-43"></a>       <span class="p">)</span>
+</pre></div>
+<p>But the question is specifically about the HPS-side of the communication, so that is what I will go into in this blog post.</p>
+
+<p>The first version of the code where I had the communication basically working is commit <a href="https://github.com/DigitalBrains1/packet-fifo/tree/c86ad0221a586a8d504f18b4ce22ea01500e02c9">c86ad02</a>. The directory <a href="https://github.com/DigitalBrains1/packet-fifo/tree/c86ad0221a586a8d504f18b4ce22ea01500e02c9/src/hps"><code>/src/hps</code></a> contains the Linux userspace code. I got to this version of the code by basically following chapter 7 of the <a href="https://www.terasic.com.tw/cgi-bin/page/archive_download.pl?Language=English&amp;No=1081&amp;FID=551f9fbfa8ed07843cd51831db1b04dd">DE10-Standard User Manual (from terasic.com.tw)</a> titled <em>Examples for using both HPS SoC and FGPA</em>. This version of the code needs to be compiled with the Intel SoC FPGA Embedded Development Suite (SoC EDS).</p>
+
+<p>As the user manual describes, you first need to generate <code>hps_0.h</code> from your Quartus project. The GHRD (in <code>/quartus</code> in my project) contains the script <code>generate_hps_qsys_header.sh</code>. This needs to be invoked from within an Intel FPGA SoC Embedded Command Shell, so it might look like this:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a>$ ~/intelFPGA/18.1/embedded/embedded_command_shell.sh
+<a name="line-2"></a>------------------------------------------------
+<a name="line-3"></a>Intel FPGA Embedded Command Shell
+<a name="line-4"></a>
+<a name="line-5"></a>Version 18.1 [Build 625]
+<a name="line-6"></a>------------------------------------------------
+<a name="line-7"></a>$ cd packet-fifo/quartus/
+<a name="line-8"></a>$ ./generate_hps_qsys_header.sh
+<a name="line-9"></a>swinfo2header: Creating macro file &#39;hps_0.h&#39; for module &#39;hps_0&#39;
+</pre></div>
+<p>This <code>hps_0.h</code> is already included in <code>/src/hps</code> in my project, but that is how it was generated, and that is what needs to be invoked again after the platform is changed in QSys.</p>
+
+<p>Now writing to the Avalon-MM bridge is as simple as <code>mmap()</code>ing <code>/dev/mem</code> and writing to the proper address constructed from constants in the headers. If you simply had instantiated an <em>Avalon to External Bus Bridge</em>, your Clash design would be the addressed slave. The <code>packet-fifo</code> project has the Clash design as a master to its own Avalon-MM slaves, and it also contains a <em>System ID Peripheral</em>. The following code would map the whole Lightweight HPS-to-FPGA AXI bridge in the process's virtual memory, then read and print the System ID and put the value 42 into the FIFO data buffer:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<a name="line-2"></a><span class="cp">#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp"></span>
+<a name="line-3"></a><span class="cp">#include</span> <span class="cpf">&lt;fcntl.h&gt;</span><span class="cp"></span>
+<a name="line-4"></a><span class="cp">#include</span> <span class="cpf">&lt;sys/mman.h&gt;</span><span class="cp"></span>
+<a name="line-5"></a><span class="cp">#include</span> <span class="cpf">&quot;hwlib.h&quot;</span><span class="cp"></span>
+<a name="line-6"></a><span class="cp">#include</span> <span class="cpf">&quot;socal/socal.h&quot;</span><span class="cp"></span>
+<a name="line-7"></a><span class="cp">#include</span> <span class="cpf">&quot;socal/hps.h&quot;</span><span class="cp"></span>
+<a name="line-8"></a><span class="cp">#include</span> <span class="cpf">&quot;socal/alt_gpio.h&quot;</span><span class="cp"></span>
+<a name="line-9"></a><span class="cp">#include</span> <span class="cpf">&quot;hps_0.h&quot;</span><span class="cp"></span>
+<a name="line-10"></a>
+<a name="line-11"></a><span class="cp">#define HW_REGS_BASE ( ALT_STM_OFST )</span>
+<a name="line-12"></a><span class="cp">#define HW_REGS_SPAN ( 0x04000000 )</span>
+<a name="line-13"></a><span class="cp">#define HW_REGS_MASK ( HW_REGS_SPAN - 1 )</span>
+<a name="line-14"></a>
+<a name="line-15"></a><span class="kt">int</span>
+<a name="line-16"></a><span class="nf">main</span><span class="p">()</span>
+<a name="line-17"></a><span class="p">{</span>
+<a name="line-18"></a>    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+<a name="line-19"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">virtual_base</span><span class="p">;</span>
+<a name="line-20"></a>    <span class="k">volatile</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">h2p_sysid_addr</span><span class="p">,</span> <span class="o">*</span><span class="n">fifo_h2f_base</span><span class="p">;</span>
+<a name="line-21"></a>    <span class="kt">uint32_t</span> <span class="n">id</span><span class="p">;</span>
+<a name="line-22"></a>
+<a name="line-23"></a>    <span class="n">fd</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">&quot;/dev/mem&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">O_RDWR</span> <span class="o">|</span> <span class="n">O_SYNC</span><span class="p">));</span>
+<a name="line-24"></a>    <span class="n">virtual_base</span> <span class="o">=</span> <span class="n">mmap</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">HW_REGS_SPAN</span><span class="p">,</span> <span class="p">(</span><span class="n">PROT_READ</span> <span class="o">|</span> <span class="n">PROT_WRITE</span><span class="p">),</span>
+<a name="line-25"></a>            <span class="n">MAP_SHARED</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="n">HW_REGS_BASE</span><span class="p">);</span>
+<a name="line-26"></a>    <span class="n">h2p_sysid_addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">virtual_base</span> <span class="o">+</span>
+<a name="line-27"></a>        <span class="p">((</span><span class="n">ALT_LWFPGASLVS_OFST</span> <span class="o">+</span> <span class="n">SYSID_QSYS_BASE</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">HW_REGS_MASK</span><span class="p">));</span>
+<a name="line-28"></a>    <span class="n">fifo_h2f_base</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">virtual_base</span> <span class="o">+</span>
+<a name="line-29"></a>        <span class="p">((</span><span class="n">ALT_LWFPGASLVS_OFST</span> <span class="o">+</span> <span class="n">FIFO_H2F_IN_BASE</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">HW_REGS_MASK</span><span class="p">));</span>
+<a name="line-30"></a>
+<a name="line-31"></a>    <span class="n">id</span> <span class="o">=</span> <span class="o">*</span><span class="n">h2p_sysid_addr</span><span class="p">;</span>
+<a name="line-32"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%#010x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span>
+<a name="line-33"></a>    <span class="o">*</span><span class="n">fifo_h2f_base</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+<a name="line-34"></a>
+<a name="line-35"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="line-36"></a><span class="p">}</span>
+</pre></div>
+<p>This is fine for some simple programmed I/O. But as soon as you add more functionality than that, such as interrupts, it seems you necessarily end up in kernel space if you are running Linux. However, Linux does offer you the tools to do just the minimum necessary in kernel space, and do the rest in user space. This is accomplished with the <a href="https://www.kernel.org/doc/html/latest/driver-api/uio-howto.html"><em>Userspace I/O</em></a> subsystem. Furthermore, by switching to using a <em>Device Tree</em>, we can almost dispense with the SoC EDS and use a regular compilation environment and cross-platform standards. The latest version of <code>packet-fifo</code>, as in the <a href="https://github.com/DigitalBrains1/packet-fifo/tree/master"><code>master</code></a> branch, does exactly that. See the <a href="https://github.com/DigitalBrains1/packet-fifo/blob/master/README">README</a> for working with that code. Using Quartus and the SoC EDS, one can generate a Device Tree overlay that contains entries that look like this:</p>
+
+<div class="codehilite"><pre><span></span><a name="line-1"></a><span class="nl">fifo_h2f_in</span><span class="p">:</span> <span class="n">fifo</span><span class="err">@</span><span class="mh">0x000000020</span> <span class="p">{</span>
+<a name="line-2"></a>        <span class="n">compatible</span> <span class="o">=</span> <span class="s">&quot;altr,fifo-18.1&quot;</span><span class="p">,</span> <span class="s">&quot;altr,fifo-1.0&quot;</span><span class="p">;</span>
+<a name="line-3"></a>        <span class="n">reg</span> <span class="o">=</span> <span class="o">&lt;</span><span class="mh">0x00000000</span> <span class="mh">0x00000020</span> <span class="mh">0x00000008</span><span class="o">&gt;</span><span class="p">,</span>
+<a name="line-4"></a>                <span class="o">&lt;</span><span class="mh">0x00000000</span> <span class="mh">0x00000000</span> <span class="mh">0x00000020</span><span class="o">&gt;</span><span class="p">;</span>
+<a name="line-5"></a>        <span class="n">reg</span><span class="o">-</span><span class="n">names</span> <span class="o">=</span> <span class="s">&quot;in&quot;</span><span class="p">,</span> <span class="s">&quot;in_csr&quot;</span><span class="p">;</span>
+<a name="line-6"></a>        <span class="n">interrupts</span> <span class="o">=</span> <span class="o">&lt;</span><span class="mi">0</span> <span class="mi">44</span> <span class="mi">4</span><span class="o">&gt;</span><span class="p">;</span>
+<a name="line-7"></a><span class="p">};</span> <span class="c1">//end fifo@0x000000020 (fifo_h2f_in)</span>
+</pre></div>
+<p>The <code>compatible</code> property matches devices to their Linux kernel drivers, and the tiny kernel driver used by <code>packet-fifo</code> matches on the <code>"altr,fifo-1.0"</code> programming model and binds to this device.</p>
+
+<p>The numbers denote addresses and interrupt lines as seen by the direct parent of such a device, and do not correspond to the view from the CPU. But Linux takes care of the mapping for us, and the tiny kernel driver enables exposing them to user space through a device file. This file can be <code>mmap()</code>ed to access the Avalon-MM bus, and <code>select()</code> or a blocking <code>read()</code> is used to wait for an interrupt. All the details of handling the interrupt are done by the kernel, by the device drivers for the SoC platform. The interrupt could even be shared with another device if interrupt lines become a scarce resource.</p>
+
+<p>With this information, it should be possible to start with exchanging words of data from the HPS-side of an Avalon-MM interface. By browsing through the <code>packet-fifo</code> project, you can also view an example of the other pieces that are needed to interface the FPGA and the HPS, albeit all still at a pretty basic level. Note that there are still some bits of documentation missing, though.</p>
+
+          </div>
+          <div class="w-embed">
+              <div class="addthis_sharing_toolbox"></div>
+            </div>
+          </div>
+          <div class="w-clearfix blog-author-block"><img src="../../../../images/peter-69445f0c.jpg" class="blog-author-image" alt="" />
+            <div class="blog-author-title">Written by</div>
+            <div class="blog-author-title _2">Peter Lebbing</div>
+          </div>
+          <div class="w-embed w-script">
+            <div id='disqus_thread'></div>
+<script type='text/javascript'>
+//<![CDATA[
+                  var disqus_shortname = 'qbaylogic';
+          
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+//]]>
+</script>
+<noscript>Please enable JavaScript to view the <a href='http://disqus.com/?ref_noscript'>comments powered by Disqus.</a></noscript>
+<a href='http://disqus.com' class='dsq-brlink'>comments powered by <span class='logo-disqus'>Disqus</span></a>
+
+          </div>
+        </div>
+        <div class="w-col w-col-3 overall-sidebar-col-right">
+          <div class="widget-block"><a href="/fpga-design.html" class="link sidebar-list-link">FPGA design</a><a href="/workshops-training.html" class="link sidebar-list-link">Workshops &amp; Training</a><a href="/clash-support.html" class="link sidebar-list-link">Clash support</a>
+          </div>
+          <div class="widget-block">
+            <a href="/about-clash.html" class="w-inline-block widget-image-block">
+              <div class="widget-image-block-overlay">
+                <div class="image-block-title">About Clash</div>
+                <div class="button">learn more</div>
+              </div>
+            </a>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <div class="w-clearfix content-info-block"><img src="../../../../images/location-pin-42237a1d.svg" class="contact-icon" alt="" />
+                <div class="contact-block-title">Visit us</div>
+                <p class="contact-info-text">Institutenweg 25A
+                  <br>7521 PH Enschede
+                  <br>The Netherlands</p>
+              </div>
+              <div class="w-clearfix content-info-block"><img src="../../../../images/telephone-handle-silhouette-2f25d8f5.svg" class="contact-icon" alt="" />
+                <div class="contact-block-title">Call us</div>
+                <p class="contact-info-text">Call us on <a href="tel:+31858000380" class="link">+31&nbsp;(0)85&nbsp;8000&nbsp;380</a>
+                </p>
+              </div>
+              <div class="w-clearfix content-info-block last"><img src="../../../../images/email-filled-closed-envelope-0e8ca69e.svg" class="contact-icon" alt="" />
+                <div class="contact-block-title">Mail us</div>
+                <p class="contact-info-text">Mail us on <a class="link" href="mailto:info@qbaylogic.com">info@qbaylogic.com</a>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="widget-block">
+            <div class="widget-content-block">
+              <ul class="w-list-unstyled icon-list">
+                <li class="icon-list-item smaller"><img src="../../../../images/computer-microprocessor-2-a05bac1b.svg" class="list-icon small" alt="" />
+                  <div class="list-title">FPGA design house</div>
+                  <p>We apply FPGA technology in domains with difficult mathematical problems, where solutions need low latencies and high performance.</p>
+                </li>
+                <li class="icon-list-item smaller"><img src="../../../../images/mathematic-operations-buttons-c1ed5c5c.svg" class="list-icon small" alt="" />
+                  <div class="list-title">Creators of Clash</div>
+                  <p>We have developed Clash, a functional hardware description language, providing unprecedented abstraction mechanisms for FPGA design.</p>
+                </li>
+                <li class="icon-list-item smaller last"><img src="../../../../images/teacher-26918785.svg" class="list-icon small" alt="" />
+                  <div class="list-title">Experienced educators</div>
+                  <p>Our workshops and training are based on 30+ years of experience in teaching students at bachelor, master, and phd level.</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5735ce1812343b0e"></script>
+
+
+  <div class="w-section footer">
+    <div class="footer-overlay">
+      <div class="w-container container">
+        <div class="w-row footer-row">
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">About us</div>
+            <p><strong>QBayLogic B.V.</strong>
+              <br>Institutenweg 25A
+              <br>7521 PH Enschede
+              <br>
+              <br>KvK: 66440483
+              <br>VAT: NL856554558B01</p>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Contact us</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item">
+                <p><strong>Postal address:<br></strong>QBayLogic B.V.
+                  <br>Institutenweg 25A
+                  <br>7521 PH Enschede</p>
+              </li>
+              <li class="footer-list-item"><a href="tel:+31858000380" class="link footer-link">+31 (0)85 8000 380</a>
+              </li>
+              <li class="footer-list-item"><a href="mailto:info@qbaylogic.com" class="link footer-link">info@qbaylogic.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Useful links</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/about-clash.html" class="link footer-link">About Clash</a>
+              </li>
+              <li class="footer-list-item"><a href="/our-team.html" class="link footer-link">Our team</a>
+              </li>
+              <li class="footer-list-item"><a href="/services-overview.html" class="link footer-link">Our services</a>
+              </li>
+              <li class="footer-list-item"><a href="/blog.html" class="link footer-link">Blog Archive</a>
+              </li>
+              <li class="footer-list-item"><a href="/contact-us.html" class="link footer-link">Contact us</a>
+              </li>
+            </ul>
+          </div>
+          <div class="w-col w-col-3 home-intro-column">
+            <div class="footer-title">Services</div>
+            <ul class="w-list-unstyled footer-list">
+              <li class="footer-list-item"><a href="/fpga-design.html" class="link footer-link">FPGA design</a>
+              </li>
+              <li class="footer-list-item"><a href="/workshops-training.html" class="link footer-link">Workshops &amp; Training</a>
+              </li>
+              <li class="footer-list-item"><a href="/clash-support.html" class="link footer-link">Clash support</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="../../../../javascripts/webflow-6eade1f3.js"></script>
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-77540661-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
